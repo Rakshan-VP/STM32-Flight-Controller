@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pyodide Web App</title>
+  <title>Pyodide Web App - Adder</title>
   <script src="https://cdn.jsdelivr.net/pyodide/v0.22.1/full/pyodide.js"></script>
   <style>
     body {
@@ -20,29 +20,45 @@
       padding: 10px;
       background: #f7f7f7;
     }
+    input[type="number"] {
+      width: 50px;
+    }
   </style>
 </head>
 <body>
-  <h1>Pyodide Web App</h1>
-  <p>Write Python code below and click "Run" to execute it in the browser:</p>
-  <textarea id="python-code"></textarea><br>
-  <button onclick="runPython()">Run</button>
+  <h1>Pyodide Web App - Adder</h1>
+  <p>Enter two numbers below and click "Add" to get the result:</p>
+  
+  <label for="num1">Number 1:</label>
+  <input type="number" id="num1"><br>
+  <label for="num2">Number 2:</label>
+  <input type="number" id="num2"><br>
+  
+  <button onclick="addNumbers()">Add</button>
+  
   <div id="output"></div>
 
   <script>
     let pyodideReadyPromise = loadPyodide();
 
-    async function runPython() {
-      const pythonCode = document.getElementById('python-code').value;
+    async function addNumbers() {
+      const num1 = document.getElementById('num1').value;
+      const num2 = document.getElementById('num2').value;
       const outputDiv = document.getElementById('output');
-      outputDiv.textContent = "Running Python...";
+      outputDiv.textContent = "Adding numbers...";
 
       // Wait until Pyodide is loaded
       const pyodide = await pyodideReadyPromise;
       
       try {
-        const result = await pyodide.runPythonAsync(pythonCode);
-        outputDiv.textContent = result;
+        // Run Python code to add the numbers
+        const result = await pyodide.runPythonAsync(`
+            num1 = ${num1}
+            num2 = ${num2}
+            sum = num1 + num2
+            sum
+        `);
+        outputDiv.textContent = `Result: ${result}`;
       } catch (err) {
         outputDiv.textContent = 'Error: ' + err.message;
       }
