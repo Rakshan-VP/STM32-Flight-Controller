@@ -1,72 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Adder with Pyodide</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pyodide Web App</title>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.22.1/full/pyodide.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+    }
+    #output {
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      background: #f7f7f7;
+    }
+  </style>
 </head>
 <body>
-    <h1>Add Two Numbers Using Pyodide</h1>
+  <h1>Pyodide Web App</h1>
+  <p>Write Python code below and click "Run" to execute it in the browser:</p>
+  <textarea id="python-code"></textarea><br>
+  <button onclick="runPython()">Run</button>
+  <div id="output"></div>
 
-    <label for="num1">Number 1: </label>
-    <input type="number" id="num1" />
-    <br><br>
-    
-    <label for="num2">Number 2: </label>
-    <input type="number" id="num2" />
-    <br><br>
+  <script>
+    async function runPython() {
+      const pythonCode = document.getElementById('python-code').value;
+      const outputDiv = document.getElementById('output');
+      outputDiv.textContent = "Running Python...";
 
-    <button onclick="addNumbers()">Add</button>
-
-    <h3>Result: <span id="result"></span></h3>
-
-    <script src="https://cdn.jsdelivr.net/npm/pyodide@0.23.4/pyodide.js"></script>
-    <script>
-        let pyodide;
-
-        async function loadPyodideAndReady() {
-            pyodide = await loadPyodide();
-            console.log("Pyodide is loaded!");
-        }
-
-        // Initialize Pyodide
-        loadPyodideAndReady();
-
-        async function addNumbers() {
-            const num1 = parseFloat(document.getElementById('num1').value);
-            const num2 = parseFloat(document.getElementById('num2').value);
-
-            // Ensure both inputs are valid numbers
-            if (isNaN(num1) || isNaN(num2)) {
-                alert('Please enter valid numbers!');
-                return;
-            }
-
-            // Wait for Pyodide to load
-            if (!pyodide) {
-                alert("Pyodide is still loading. Please try again shortly.");
-                return;
-            }
-
-            // Ensure Pyodide has finished loading
-            await pyodide.loadPackage([]);  // Ensures Pyodide has finished initialization.
-
-            // Define Python code
-            const code = `
-def add(a, b):
-    return a + b
-result = add(${num1}, ${num2})
-result
-`;
-
-            try {
-                const result = await pyodide.runPythonAsync(code);
-                document.getElementById('result').innerText = result;
-            } catch (error) {
-                console.error("Error executing Python:", error);
-                alert("There was an error calculating the result.");
-            }
-        }
-    </script>
+      // Load Pyodide and run the code
+      const pyodide = await loadPyodide();
+      try {
+        const result = await pyodide.runPythonAsync(pythonCode);
+        outputDiv.textContent = result;
+      } catch (err) {
+        outputDiv.textContent = 'Error: ' + err.message;
+      }
+    }
+  </script>
 </body>
 </html>
