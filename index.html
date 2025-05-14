@@ -22,24 +22,33 @@
 
     <script src="https://cdn.jsdelivr.net/npm/pyodide@0.23.4/pyodide.js"></script>
     <script>
-        async function loadPyodide() {
-            await loadPyodide();
+        let pyodideReady = false;
+
+        async function loadPyodideAndReady() {
+            const pyodide = await loadPyodide();
+            pyodideReady = true;
+            console.log("Pyodide is ready");
         }
 
+        // Load Pyodide initially
+        loadPyodideAndReady();
+
         async function addNumbers() {
-            const num1 = document.getElementById('num1').value;
-            const num2 = document.getElementById('num2').value;
-            
-            // Ensure both inputs are numbers
-            if (num1 === '' || num2 === '') {
-                alert('Please enter both numbers!');
+            const num1 = parseFloat(document.getElementById('num1').value);
+            const num2 = parseFloat(document.getElementById('num2').value);
+
+            // Ensure both inputs are valid numbers
+            if (isNaN(num1) || isNaN(num2)) {
+                alert('Please enter valid numbers!');
                 return;
             }
 
-            // Load Pyodide and execute Python code
-            await loadPyodide();
+            if (!pyodideReady) {
+                alert("Pyodide is still loading. Please try again shortly.");
+                return;
+            }
 
-            const pyodide = await loadPyodide();
+            // Define Python code
             const code = `
 def add(a, b):
     return a + b
@@ -47,8 +56,14 @@ result = add(${num1}, ${num2})
 result
 `;
 
-            const result = pyodide.runPython(code);
-            document.getElementById('result').innerText = result;
+            // Execute Python code using Pyodide
+            try {
+                const result = await pyodide.runPythonAsync(code);
+                document.getElementById('result').innerText = result;
+            } catch (error) {
+                console.error("Error running Python code", error);
+                alert("There was an error calculating the result.");
+            }
         }
     </script>
 </body>
