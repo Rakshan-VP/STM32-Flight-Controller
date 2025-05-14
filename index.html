@@ -22,15 +22,14 @@
 
     <script src="https://cdn.jsdelivr.net/npm/pyodide@0.23.4/pyodide.js"></script>
     <script>
-        let pyodideReady = false;
+        let pyodide;
 
         async function loadPyodideAndReady() {
-            const pyodide = await loadPyodide();
-            pyodideReady = true;
-            console.log("Pyodide is ready");
+            pyodide = await loadPyodide();
+            console.log("Pyodide is loaded!");
         }
 
-        // Load Pyodide initially
+        // Initialize Pyodide
         loadPyodideAndReady();
 
         async function addNumbers() {
@@ -43,25 +42,25 @@
                 return;
             }
 
-            if (!pyodideReady) {
+            // Wait for Pyodide to load
+            if (!pyodide) {
                 alert("Pyodide is still loading. Please try again shortly.");
                 return;
             }
 
             // Define Python code
             const code = `
-def add(a, b):
-    return a + b
-result = add(${num1}, ${num2})
-result
-`;
+                        def add(a, b):
+                            return a + b
+                        result = add(${num1}, ${num2})
+                        result
+                        `;
 
-            // Execute Python code using Pyodide
             try {
                 const result = await pyodide.runPythonAsync(code);
                 document.getElementById('result').innerText = result;
             } catch (error) {
-                console.error("Error running Python code", error);
+                console.error("Error executing Python:", error);
                 alert("There was an error calculating the result.");
             }
         }
