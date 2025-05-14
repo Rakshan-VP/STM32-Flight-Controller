@@ -48,6 +48,9 @@
                 return;
             }
 
+            // Ensure Pyodide has finished loading
+            await pyodide.loadPackage([]);  // Ensures Pyodide has finished initialization.
+
             // Define Python code
             const code = `
 def add(a, b):
