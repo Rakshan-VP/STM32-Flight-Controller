@@ -30,13 +30,16 @@
   <div id="output"></div>
 
   <script>
+    let pyodideReadyPromise = loadPyodide();
+
     async function runPython() {
       const pythonCode = document.getElementById('python-code').value;
       const outputDiv = document.getElementById('output');
       outputDiv.textContent = "Running Python...";
 
-      // Load Pyodide and run the code
-      const pyodide = await loadPyodide();
+      // Wait until Pyodide is loaded
+      const pyodide = await pyodideReadyPromise;
+      
       try {
         const result = await pyodide.runPythonAsync(pythonCode);
         outputDiv.textContent = result;
