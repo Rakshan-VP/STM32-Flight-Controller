@@ -1,16 +1,16 @@
-let pyodideReady = loadPyodide();
+let pyodideReady = loadPyodide(); // This ensures pyodide is loaded asynchronously
 
 async function runPython() {
-  await pyodideReady;
+  await pyodideReady; // Wait for Pyodide to be ready
 
   const num1 = document.getElementById("num1").value;
   const num2 = document.getElementById("num2").value;
 
-  // Load main.py as a string
+  // Load the Python code from main.py
   const response = await fetch("main.py");
   let pyCode = await response.text();
 
-  // Replace placeholders in the Python code
+  // Replace the placeholders with user input
   pyCode = pyCode.replace("{{NUM1}}", num1).replace("{{NUM2}}", num2);
 
   try {
