@@ -28,6 +28,7 @@ button {
     margin-top: 20px;
 }
 
-canvas {
-    border: 1px solid black;
+#motorOutput {
+    margin-top: 20px;
+    font-size: 18px;
 }
