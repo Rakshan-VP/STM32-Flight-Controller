@@ -1,6 +1,9 @@
 async function loadPyodideAndRun() {
     let pyodide = await loadPyodide();
 
+    // Install numpy package
+    await pyodide.loadPackage('numpy');
+
     // Load the Python file (main.py) dynamically
     const response = await fetch('src/main.py');
     const pythonCode = await response.text();
