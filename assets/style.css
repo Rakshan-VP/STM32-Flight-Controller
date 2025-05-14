@@ -24,13 +24,10 @@ button {
     cursor: pointer;
 }
 
-#3d-map {
-    width: 100%;
-    height: 400px;
-    margin-top: 20px;
-    background-color: #f0f0f0;
-}
-
 #output {
     margin-top: 20px;
+}
+
+canvas {
+    border: 1px solid black;
 }
