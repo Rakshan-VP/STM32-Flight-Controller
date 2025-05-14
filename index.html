@@ -7,29 +7,27 @@
     <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
-    <h1>UAV Simulator</h1>
+    <h1>Quadrotor Motor PWM Simulator</h1>
 
     <div class="input-section">
-        <label for="roll">Roll:</label>
-        <input type="number" id="roll" name="roll" step="any">
-        <label for="pitch">Pitch:</label>
-        <input type="number" id="pitch" name="pitch" step="any">
-        <label for="yaw">Yaw:</label>
-        <input type="number" id="yaw" name="yaw" step="any">
-        <label for="thrust">Thrust:</label>
-        <input type="number" id="thrust" name="thrust" step="any">
+        <label for="roll">Roll (-1 to 1):</label>
+        <input type="number" id="roll" step="0.01" min="-1" max="1">
+        <label for="pitch">Pitch (-1 to 1):</label>
+        <input type="number" id="pitch" step="0.01" min="-1" max="1">
+        <label for="yaw">Yaw (-1 to 1):</label>
+        <input type="number" id="yaw" step="0.01" min="-1" max="1">
+        <label for="thrust">Thrust (-1 to 1):</label>
+        <input type="number" id="thrust" step="0.01" min="-1" max="1">
 
         <button id="submitBtn">Submit</button>
     </div>
 
-    <div id="3d-map"></div>
-
     <div id="output">
-        <h2>RPYT at Time:</h2>
-        <p id="rpy-output">Roll: - Pitch: - Yaw: - Thrust: -</p>
+        <h2>Motor PWM Signals</h2>
+        <canvas id="plotCanvas" width="800" height="400"></canvas>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/three@0.136.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pyodide@0.19.1/pyodide.js"></script>
     <script src="assets/scripts.js"></script>
 </body>
 </html>
