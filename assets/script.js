@@ -1,42 +1,45 @@
-document.getElementById('submitBtn').addEventListener('click', function () {
-    const roll = parseFloat(document.getElementById('roll').value);
-    const pitch = parseFloat(document.getElementById('pitch').value);
-    const yaw = parseFloat(document.getElementById('yaw').value);
-    const thrust = parseFloat(document.getElementById('thrust').value);
+async function loadPyodideAndRun() {
+    let pyodide = await loadPyodide();
 
-    // Update the output section
-    document.getElementById('rpy-output').innerHTML = `Roll: ${roll}° | Pitch: ${pitch}° | Yaw: ${yaw}° | Thrust: ${thrust}`;
+    // Load the Python file (main.py) dynamically
+    const response = await fetch('src/main.py');
+    const pythonCode = await response.text();
 
-    // Call the function to update the 3D visualization
-    update3DMap(roll, pitch, yaw, thrust);
-});
+    pyodide.runPython(pythonCode);
 
-function update3DMap(roll, pitch, yaw, thrust) {
-    // Basic 3D setup using Three.js
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / 400, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, 400);
-    document.getElementById('3d-map').appendChild(renderer.domElement);
+    document.getElementById('submitBtn').addEventListener('click', () => {
+        const roll = parseFloat(document.getElementById('roll').value);
+        const pitch = parseFloat(document.getElementById('pitch').value);
+        const yaw = parseFloat(document.getElementById('yaw').value);
+        const thrust = parseFloat(document.getElementById('thrust').value);
 
-    // Create a simple sphere to represent the UAV
-    const geometry = new THREE.SphereGeometry(1, 32, 32);
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const sphere = new THREE.Mesh(geometry, material);
-    scene.add(sphere);
+        // Call the Python function to calculate PWM signals
+        const pwmSignals = pyodide.globals.convert_to_pwm(roll, pitch, yaw, thrust);
 
-    // Apply RPYT to the sphere
-    sphere.rotation.x = THREE.MathUtils.degToRad(roll);
-    sphere.rotation.y = THREE.MathUtils.degToRad(pitch);
-    sphere.rotation.z = THREE.MathUtils.degToRad(yaw);
-
-    // Set camera position
-    camera.position.z = 5;
-
-    // Animate the scene
-    function animate() {
-        requestAnimationFrame(animate);
-        renderer.render(scene, camera);
-    }
-    animate();
+        // Plot the PWM signals on the canvas
+        plotPWM(pwmSignals);
+    });
 }
+
+function plotPWM(pwmSignals) {
+    const canvas = document.getElementById('plotCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw the PWM signals
+    const labels = ['Front Left', 'Front Right', 'Back Left', 'Back Right'];
+    const motorColors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00'];
+    
+    pwmSignals.forEach((pwm, index) => {
+        ctx.beginPath();
+        ctx.arc(150 + (index * 180), 200, 30, 0, 2 * Math.PI);
+        ctx.fillStyle = motorColors[index];
+        ctx.fill();
+        
+        ctx.fillStyle = '#000000';
+        ctx.fillText(labels[index], 150 + (index * 180), 250);
+        ctx.fillText(`${Math.round(pwm)}`, 150 + (index * 180), 180);
+    });
+}
+
+loadPyodideAndRun();
