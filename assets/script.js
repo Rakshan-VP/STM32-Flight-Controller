@@ -24,35 +24,11 @@ async function loadPyodideAndRun() {
         // Call the Python function to calculate PWM signals
         const pwmSignals = pyodide.globals.convert_to_pwm(roll, pitch, yaw, thrust);
 
-        // Plot the PWM signals on the canvas
-        plotPWM(pwmSignals);
-    });
-}
-
-function plotPWM(pwmSignals) {
-    const canvas = document.getElementById('plotCanvas');
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the previous plot
-
-    // Draw the PWM signals
-    const labels = ['Front Left', 'Front Right', 'Back Left', 'Back Right'];
-    const motorColors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00'];
-
-    // Plot each motor PWM signal
-    pwmSignals.forEach((pwm, index) => {
-        const motorHeight = pwm - 1000; // Normalize PWM value to the range 0 to 1000
-        const motorWidth = 50; // Width of the circle
-
-        // Plot each motor PWM signal as a vertical bar on the canvas
-        ctx.beginPath();
-        ctx.arc(150 + (index * 180), 200, motorWidth, 0, 2 * Math.PI);
-        ctx.fillStyle = motorColors[index];
-        ctx.fill();
-
-        // Display text labels
-        ctx.fillStyle = '#000000';
-        ctx.fillText(labels[index], 150 + (index * 180), 250);
-        ctx.fillText(`${Math.round(pwm)}`, 150 + (index * 180), 180);
+        // Update the displayed motor PWM values
+        document.getElementById('flMotor').textContent = Math.round(pwmSignals[0]);
+        document.getElementById('frMotor').textContent = Math.round(pwmSignals[1]);
+        document.getElementById('blMotor').textContent = Math.round(pwmSignals[2]);
+        document.getElementById('brMotor').textContent = Math.round(pwmSignals[3]);
     });
 }
 
