@@ -3,70 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Adder with Pyodide</title>
+    <title>UAV Simulator</title>
+    <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
-    <h1>Add Two Numbers Using Pyodide</h1>
+    <h1>UAV Simulator</h1>
 
-    <label for="num1">Number 1: </label>
-    <input type="number" id="num1" />
-    <br><br>
-    
-    <label for="num2">Number 2: </label>
-    <input type="number" id="num2" />
-    <br><br>
+    <div class="input-section">
+        <label for="roll">Roll:</label>
+        <input type="number" id="roll" name="roll" step="any">
+        <label for="pitch">Pitch:</label>
+        <input type="number" id="pitch" name="pitch" step="any">
+        <label for="yaw">Yaw:</label>
+        <input type="number" id="yaw" name="yaw" step="any">
+        <label for="thrust">Thrust:</label>
+        <input type="number" id="thrust" name="thrust" step="any">
 
-    <button onclick="addNumbers()">Add</button>
+        <button id="submitBtn">Submit</button>
+    </div>
 
-    <h3>Result: <span id="result"></span></h3>
+    <div id="3d-map"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/pyodide@0.23.4/pyodide.js"></script>
-    <script>
-        let pyodide;
+    <div id="output">
+        <h2>RPYT at Time:</h2>
+        <p id="rpy-output">Roll: - Pitch: - Yaw: - Thrust: -</p>
+    </div>
 
-        async function loadPyodideAndReady() {
-            pyodide = await loadPyodide();
-            console.log("Pyodide is loaded!");
-        }
-
-        // Initialize Pyodide
-        loadPyodideAndReady();
-
-        async function addNumbers() {
-            const num1 = parseFloat(document.getElementById('num1').value);
-            const num2 = parseFloat(document.getElementById('num2').value);
-
-            // Ensure both inputs are valid numbers
-            if (isNaN(num1) || isNaN(num2)) {
-                alert('Please enter valid numbers!');
-                return;
-            }
-
-            // Wait for Pyodide to load
-            if (!pyodide) {
-                alert("Pyodide is still loading. Please try again shortly.");
-                return;
-            }
-
-            // Ensure Pyodide has finished loading
-            await pyodide.loadPackage([]);  // Ensures Pyodide has finished initialization.
-
-            // Define Python code
-            const code = `
-def add(a, b):
-    return a + b
-result = add(${num1}, ${num2})
-result
-`;
-
-            try {
-                const result = await pyodide.runPythonAsync(code);
-                document.getElementById('result').innerText = result;
-            } catch (error) {
-                console.error("Error executing Python:", error);
-                alert("There was an error calculating the result.");
-            }
-        }
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.136.0/build/three.min.js"></script>
+    <script src="assets/scripts.js"></script>
 </body>
 </html>
