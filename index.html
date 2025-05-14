@@ -50,11 +50,11 @@
 
             // Define Python code
             const code = `
-                        def add(a, b):
-                            return a + b
-                        result = add(${num1}, ${num2})
-                        result
-                        `;
+def add(a, b):
+    return a + b
+result = add(${num1}, ${num2})
+result
+`;
 
             try {
                 const result = await pyodide.runPythonAsync(code);
