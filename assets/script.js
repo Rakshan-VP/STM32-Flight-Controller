@@ -23,17 +23,8 @@ function initMapPlot() {
 }
 
 function updateMapPosition(lat, lon) {
-  Plotly.react('map2d', [{
-    x: [lon],
-    y: [lat],
-    mode: 'markers+lines',
-    line: { color: 'red' },
-    name: 'Path'
-  }], {
-    title: 'Drone Path',
-    xaxis: { title: 'Longitude' },
-    yaxis: { title: 'Latitude' }
-  });
+  console.log(`Plotting on map: lat=${lat}, lon=${lon}`);
+  Plotly.extendTraces('map2d', { x: [[lon]], y: [[lat]] }, [0]);
 }
 
 function init3DModel() {
