@@ -10,12 +10,19 @@ async function initPyodide() {
 // Initialize Leaflet 2D map
 let map;
 function initMap() {
-  map = L.map('map2d').setView([0, 0], 2); // start zoomed out on the globe
+  const container = document.getElementById('map2d');
+  if (!container) {
+    console.error("Map container not found!");
+    return;
+  }
+
+  map = L.map(container).setView([0, 0], 2); // Centered at equator
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
   }).addTo(map);
 }
+
 
 // Update 2D map position marker
 let marker;
