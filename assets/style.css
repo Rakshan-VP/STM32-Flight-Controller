@@ -31,12 +31,16 @@ body {
 }
 
 /* Plot container styling */
-#map2d,
-#3d {
+#map2d {
   width: 100%;
   height: 100%;
 }
 
+#3d {
+  width: 70%;
+  height: 70%;
+}
+  
 /* Display text styling */
 #rpy-values,
 #pos-values,
