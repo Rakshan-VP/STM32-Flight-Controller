@@ -23,7 +23,6 @@ function initMapPlot() {
 }
 
 function updateMapPosition(lat, lon) {
-  console.log(`Plotting on map: lat=${lat}, lon=${lon}`);
   Plotly.extendTraces('map2d', { x: [[lon]], y: [[lat]] }, [0]);
 }
 
