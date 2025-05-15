@@ -33,7 +33,7 @@ function init3DModel() {
     x: [0, 0],
     y: [0, 0],
     z: [0, 1],
-    line: { color: 'red', width: 6 },
+    line: { color: 'green', width: 6 },
     marker: { size: 4 }
   }], {
     scene: {
