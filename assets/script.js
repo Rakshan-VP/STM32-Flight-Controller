@@ -280,4 +280,65 @@ async function startSimulation() {
   const kp = parseFloat(document.getElementById("kp").value);
   const ki = parseFloat(document.getElementById("ki").value);
   const kd = parseFloat(document.getElementById("kd").value);
-  const losGain = parseFloat(document.get
+  const losGain = parseFloat(document.getElementById("losGain").value);
+  const simClass = pyodide.globals.get("Simulator");
+  simInstance = simClass(
+    [startLat, startLon, startAlt],
+    waypoints,
+    kp,
+    ki,
+    kd,
+    losGain,
+    rtl
+  );
+  
+  simInterval = setInterval(() => {
+    const result = simInstance.step().toJs();
+    updateSimData(result);
+  }, 100);
+  
+  function updateSimData(data) {
+    const t = data.time;
+    const pos = data.position;
+    const state = data.state;
+    const motors = data.motor_commands;
+  
+    simData.time.push(t);
+    simData.roll.push(state[0]);
+    simData.pitch.push(state[1]);
+    simData.yaw.push(state[2]);
+    simData.thrust.push(state[3]);
+    simData.lat.push(pos[0]);
+    simData.lon.push(pos[1]);
+    simData.alt.push(pos[2]);
+  
+    for (let i = 0; i < 4; i++) {
+      simData.motors[i].push(motors[i]);
+    }
+  
+    // Update plots
+    Plotly.update("plotRoll", { x: [simData.time], y: [simData.roll] });
+    Plotly.update("plotPitch", { x: [simData.time], y: [simData.pitch] });
+    Plotly.update("plotYaw", { x: [simData.time], y: [simData.yaw] });
+    Plotly.update("plotThrust", { x: [simData.time], y: [simData.thrust] });
+  
+    // Update map
+    const latlng = [pos[0], pos[1]];
+    droneMarker.setLatLng(latlng);
+    dronePathLatLngs.push(latlng);
+    pathLine.setLatLngs(dronePathLatLngs);
+  
+    // Update 3D drone orientation (very simple)
+    droneMesh.rotation.x = state[0];
+    droneMesh.rotation.y = state[2];
+    droneMesh.rotation.z = state[1];
+  
+    document.getElementById("rpyValues").innerText =
+      `Roll: ${state[0].toFixed(2)}\nPitch: ${state[1].toFixed(2)}\nYaw: ${state[2].toFixed(2)}\nThrust: ${state[3].toFixed(2)}`;
+    document.getElementById("positionValues").innerText =
+      `Lat: ${pos[0].toFixed(6)}\nLon: ${pos[1].toFixed(6)}\nAlt: ${pos[2].toFixed(1)}`;
+    document.getElementById("motorCommands").innerText =
+      `Motors: ${motors.join(", ")}`;
+  }
+  
+  init();
