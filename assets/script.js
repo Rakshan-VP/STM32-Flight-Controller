@@ -133,9 +133,12 @@ document.getElementById("start-sim").addEventListener("click", async () => {
 });
 
 // Initialize everything
-initPyodide().then(() => {
-  initPlots();
-  initMap();
-  init3DModel();
-  console.log("Pyodide, plots, map, and 3D model initialized.");
+window.addEventListener('DOMContentLoaded', () => {
+  initPyodide().then(() => {
+    initPlots();
+    initMap();
+    init3DModel();
+    console.log("Pyodide, plots, map, and 3D model initialized.");
+  });
 });
+
