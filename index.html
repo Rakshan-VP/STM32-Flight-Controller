@@ -42,13 +42,24 @@
 
     <section id="map-section">
       <h2>4) 3D Map + RPYT Display</h2>
-      <div id="rpythud">
-        <p><b>Roll:</b> <span id="roll-val">0</span>°</p>
-        <p><b>Pitch:</b> <span id="pitch-val">0</span>°</p>
-        <p><b>Yaw:</b> <span id="yaw-val">0</span>°</p>
-        <p><b>Thrust:</b> <span id="thrust-val">0</span></p>
+      <div id="rpytupd" style="display: flex;">
+        <div style="width: 150px; padding: 10px;">
+          <h4>RPYT</h4>
+          <p>Roll: <span id="roll-val">0</span>°</p>
+          <p>Pitch: <span id="pitch-val">0</span>°</p>
+          <p>Yaw: <span id="yaw-val">0</span>°</p>
+          <p>Thrust: <span id="thrust-val">0</span></p>
+        </div>
+      
+        <div id="threejs-container" style="flex-grow: 1; height: 500px;"></div>
+      
+        <div style="width: 200px; padding: 10px;">
+          <h4>Position</h4>
+          <p>Lat: <span id="pos-lat">0</span></p>
+          <p>Lon: <span id="pos-lon">0</span></p>
+          <p>Alt: <span id="pos-alt">0</span></p>
+        </div>
       </div>
-      <div id="threejs-container"></div>
     </section>
 
     <section id="rpyt-plot">
