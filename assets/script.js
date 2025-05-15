@@ -103,27 +103,42 @@ function getInputs() {
   };
 }
 
-function updateDisplay(data) {
-  console.log("Incoming data:", data);
-  if (!data.pos || typeof data.pos.lat !== 'number' || typeof data.pos.lon !== 'number') {
-    console.error("Invalid or missing position data:", data.pos);
-    return; // skip updating to avoid errors
+function updateDisplay(incomingData) {
+  console.log("Incoming data:", incomingData);
+
+  const roll = incomingData.roll;
+  const pitch = incomingData.pitch;
+  const yaw = incomingData.yaw;
+  const thrust = incomingData.thrust;
+  const motors = incomingData.motors;
+  const pos = incomingData.pos;
+
+  // Defensive check for pos
+  if (!pos || pos.lat === undefined || pos.lon === undefined || pos.alt === undefined) {
+    console.error("Position data missing or invalid:", pos);
+    return;
   }
-  const { roll, pitch, yaw, thrust, motors, pos } = data;
 
-  document.getElementById("rpy-values").innerText = `RPY: ${roll.toFixed(2)}, ${pitch.toFixed(2)}, ${yaw.toFixed(2)}`;
-  document.getElementById("pos-values").innerText = `Position: ${pos.lat.toFixed(5)}, ${pos.lon.toFixed(5)}, ${pos.alt.toFixed(2)}`;
-  document.getElementById("motor-values").innerText = `Motors: ${motors.map(m => m.toFixed(0)).join(", ")}`;
+  document.getElementById("rpy-values").innerText =
+    "RPY: " + roll.toFixed(2) + ", " + pitch.toFixed(2) + ", " + yaw.toFixed(2);
 
+  document.getElementById("pos-values").innerText =
+    "Position: " + pos.lat.toFixed(5) + ", " + pos.lon.toFixed(5) + ", " + pos.alt.toFixed(2);
+
+  document.getElementById("motor-values").innerText =
+    "Motors: " + motors.map(function(m) { return m.toFixed(0); }).join(", ");
+
+  // Extend plots
   Plotly.extendTraces('plot-roll', { y: [[roll]] }, [0]);
   Plotly.extendTraces('plot-pitch', { y: [[pitch]] }, [0]);
   Plotly.extendTraces('plot-yaw', { y: [[yaw]] }, [0]);
   Plotly.extendTraces('plot-thrust', { y: [[thrust]] }, [0]);
 
-  // Update map and 3D orientation
-  updateMapPosition(pos.lat, pos.lon);
+  // Update map and 3D model
+  updateMapPosition(Number(pos.lat), Number(pos.lon));
   update3DOrientation(roll, pitch, yaw);
 }
+
 
 function initPlots() {
   const configs = ['roll', 'pitch', 'yaw', 'thrust'];
