@@ -23,7 +23,16 @@ function initMapPlot() {
 }
 
 function updateMapPosition(lat, lon) {
-  Plotly.extendTraces('map2d', { x: [[lon]], y: [[lat]] }, [0]);
+  Plotly.react('map2d', [{
+    x: [lon],
+    y: [lat],
+    mode: 'markers+lines',
+    type: 'scatter'
+  }], {
+    title: 'Drone Path',
+    xaxis: { title: 'Longitude' },
+    yaxis: { title: 'Latitude' }
+  });
 }
 
 function init3DModel() {
@@ -69,7 +78,7 @@ function update3DOrientation(roll, pitch, yaw) {
     x: [0, vx],
     y: [0, vy],
     z: [0, vz],
-    line: { color: 'red', width: 6 },
+    line: { color: 'green', width: 6 },
     marker: { size: 4 }
   }], {
     scene: {
