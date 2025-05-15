@@ -12,7 +12,7 @@ function initMapPlot() {
     x: [],
     y: [],
     mode: 'lines+markers',
-    line: { color: 'green' },
+    line: { color: 'red' },
     name: 'Path'
   }], {
     title: 'Drone Path (Lat vs Lon)',
@@ -27,7 +27,8 @@ function updateMapPosition(lat, lon) {
     x: [lon],
     y: [lat],
     mode: 'markers+lines',
-    type: 'scatter'
+    line: { color: 'red' },
+    name: 'Path'
   }], {
     title: 'Drone Path',
     xaxis: { title: 'Longitude' },
