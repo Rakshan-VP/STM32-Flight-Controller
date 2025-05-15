@@ -113,6 +113,10 @@ function getInputs() {
 
 function updateDisplay(data) {
   console.log("Incoming data:", data);
+  if (!data.pos || typeof data.pos.lat !== 'number' || typeof data.pos.lon !== 'number') {
+    console.error("Invalid or missing position data:", data.pos);
+    return; // skip updating to avoid errors
+  }
   const { roll, pitch, yaw, thrust, motors, pos } = data;
 
   document.getElementById("rpy-values").innerText = `RPY: ${roll.toFixed(2)}, ${pitch.toFixed(2)}, ${yaw.toFixed(2)}`;
