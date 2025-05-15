@@ -29,7 +29,7 @@ function updateMapPosition(lat, lon) {
 // Initialize Three.js 3D drone model (simple cube as placeholder)
 let scene, camera, renderer, cube;
 function init3DModel() {
-  const container = document.getElementById('3d-view');
+  const container = document.getElementById('3d');
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
