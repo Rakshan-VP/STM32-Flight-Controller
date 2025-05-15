@@ -46,12 +46,6 @@ function init3DModel() {
   });
 }
 
-// // Animate the 3D model continuously
-// function animate3D() {
-//   requestAnimationFrame(animate3D);
-//   renderer.render(scene, camera);
-// }
-
 // Update 3D drone orientation from roll, pitch, yaw (in degrees)
 function update3DOrientation(roll, pitch, yaw) {
    // Convert degrees to radians
