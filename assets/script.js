@@ -7,32 +7,23 @@ async function initPyodide() {
   pyodide.runPython(simCode);
 }
 
-// Initialize Leaflet 2D map
-let map;
-function initMap() {
-  const container = document.getElementById('map2d');
-  if (!container) {
-    console.error("Map container not found!");
-    return;
-  }
-
-  map = L.map(container).setView([0, 0], 2); // Centered at equator
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18,
-  }).addTo(map);
+function initMapPlot() {
+  Plotly.newPlot('map2d', [{
+    x: [],
+    y: [],
+    mode: 'lines+markers',
+    line: { color: 'green' },
+    name: 'Path'
+  }], {
+    title: 'Drone Path (Lat vs Lon)',
+    xaxis: { title: 'Longitude' },
+    yaxis: { title: 'Latitude' },
+    margin: { t: 30 }
+  });
 }
 
-
-// Update 2D map position marker
-let marker;
 function updateMapPosition(lat, lon) {
-  if (!marker) {
-    marker = L.marker([lat, lon]).addTo(map);
-  } else {
-    marker.setLatLng([lat, lon]);
-  }
-  map.setView([lat, lon], 12); // zoom to current position
+  Plotly.extendTraces('map2d', { x: [[lon]], y: [[lat]] }, [0]);
 }
 
 // Initialize Three.js 3D drone model (simple cube as placeholder)
@@ -143,7 +134,7 @@ document.getElementById("start-sim").addEventListener("click", async () => {
 window.addEventListener('DOMContentLoaded', () => {
   initPyodide().then(() => {
     initPlots();
-    initMap();
+    initMapPlot();
     init3DModel();
     console.log("Pyodide, plots, map, and 3D model initialized.");
   });
