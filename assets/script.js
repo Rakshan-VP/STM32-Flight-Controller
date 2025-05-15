@@ -1,200 +1,283 @@
-// === GLOBALS === //
-let simulationRunning = false;
-let simTime = 0; // seconds
-const simStep = 0.05; // 20 Hz update rate
+// Load Pyodide and initialize Python environment + simulation
+let pyodide = null;
+let sim = null; // Python simulator object
 
-// Data buffers for plotting
-const timeData = [];
-const rpyData = {roll: [], pitch: [], yaw: [], thrust: []};
-const motorData = [[], [], [], []]; // M1, M2, M3, M4
-
-// Drone state (dummy simulation)
-let droneState = {
-  position: {lat: 12.9716, lon: 77.5946, alt: 0},
-  roll: 0, pitch: 0, yaw: 0, thrust: 0,
-  motorCommands: [1500, 1500, 1500, 1500]
+// Globals for plots and UI elements
+const rpytPlots = {
+  roll: null,
+  pitch: null,
+  yaw: null,
+  thrust: null,
 };
 
-let waypoints = [];
-let rtlEnabled = false;
-let pidGains = {kp:1, ki:0, kd:0.1};
-let losGain = 0.5;
+const motorCmdColors = ["red", "green", "blue", "orange"];
 
-// --- Three.js Setup ---
-let scene, camera, renderer, droneModel;
-const RADIANS_TO_DEG = 180/Math.PI;
+let map, droneMarker, pathLine;
+let dronePathLatLngs = [];
 
-function initThreeJS() {
-  const container = document.getElementById('threejs-container');
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
-  camera.position.set(0, -15, 10);
-  camera.lookAt(0, 0, 0);
+let threeScene, threeCamera, threeRenderer, droneMesh, controls;
 
-  renderer = new THREE.WebGLRenderer({antialias:true});
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  container.appendChild(renderer.domElement);
+async function loadPyodideAndPackages() {
+  pyodide = await loadPyodide({
+    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/",
+  });
+  await pyodide.loadPackage(["numpy", "micropip"]);
 
-  // Add light
-  const light = new THREE.DirectionalLight(0xffffff, 1);
-  light.position.set(10,10,10);
-  scene.add(light);
+  // You can load custom python files here from /src/ or embed them inline
+  // For now, we will inline minimal python for simulation
 
-  const ambient = new THREE.AmbientLight(0x404040);
-  scene.add(ambient);
+  const pyCode = `
+import math
+import numpy as np
 
-  // Ground Plane
-  const planeGeo = new THREE.PlaneGeometry(50,50);
-  const planeMat = new THREE.MeshStandardMaterial({color: 0x88cc88});
-  const plane = new THREE.Mesh(planeGeo, planeMat);
-  plane.rotation.x = - Math.PI / 2;
-  scene.add(plane);
+class Simulator:
+    def __init__(self, start_pos, waypoints, kp, ki, kd, los_gain, rtl):
+        self.lat, self.lon, self.alt = start_pos
+        self.waypoints = waypoints
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.los_gain = los_gain
+        self.rtl = rtl
+        self.time = 0.0
+        self.dt = 0.1  # 10 Hz sim
 
-  // Drone (simple box as placeholder)
-  const droneGeo = new THREE.BoxGeometry(1, 1, 0.3);
-  const droneMat = new THREE.MeshStandardMaterial({color: 0x0033ff});
-  droneModel = new THREE.Mesh(droneGeo, droneMat);
-  scene.add(droneModel);
+        self.current_wp_index = 0
+        self.max_steps = 500
+
+        # State: [roll, pitch, yaw, thrust]
+        self.state = np.array([0., 0., 0., 0.])
+        self.motor_commands = [0, 0, 0, 0]
+
+        self.position = np.array([self.lat, self.lon, self.alt])
+        self.position_history = [self.position.copy()]
+        self.rpyt_history = [self.state.copy()]
+        self.motor_history = [self.motor_commands.copy()]
+
+        # Simple PID state
+        self.integral = np.zeros(4)
+        self.prev_error = np.zeros(4)
+
+    def step(self):
+        # Guidance block: move toward current waypoint or RTL
+        target = None
+        if self.rtl:
+            target = np.array([self.lat, self.lon, self.alt])  # RTL start pos
+        else:
+            if self.current_wp_index < len(self.waypoints):
+                target = self.waypoints[self.current_wp_index]
+            else:
+                # End of mission
+                target = self.position
+
+        # Simple guidance: error in lat, lon, alt to target
+        pos_error = target - self.position
+
+        # If close to wp, increment index
+        if np.linalg.norm(pos_error) < 0.00005:  # ~5m threshold approx
+            if not self.rtl:
+                self.current_wp_index += 1
+
+        # Desired roll, pitch, yaw, thrust based on error and LOS gain
+        desired_roll = self.los_gain * pos_error[1] * 100  # simplified approx
+        desired_pitch = self.los_gain * pos_error[0] * 100
+        desired_yaw = 0  # for simplicity fixed yaw
+        desired_thrust = min(max(0.5 + pos_error[2], 0), 1)
+
+        desired = np.array([desired_roll, desired_pitch, desired_yaw, desired_thrust])
+
+        # PID control to follow desired from current state
+        error = desired - self.state
+        self.integral += error * self.dt
+        derivative = (error - self.prev_error) / self.dt
+        self.prev_error = error
+
+        control = (self.kp * error) + (self.ki * self.integral) + (self.kd * derivative)
+        self.state += control * self.dt
+
+        # Simple motor mixer for quadrotor (4 motors)
+        # Motor commands between 1000-2000 PWM based on RPYT
+        base_pwm = 1500 + self.state[3]*500  # thrust part
+
+        roll_pwm = self.state[0]*100
+        pitch_pwm = self.state[1]*100
+        yaw_pwm = self.state[2]*50
+
+        m1 = base_pwm + roll_pwm + pitch_pwm - yaw_pwm
+        m2 = base_pwm - roll_pwm + pitch_pwm + yaw_pwm
+        m3 = base_pwm - roll_pwm - pitch_pwm - yaw_pwm
+        m4 = base_pwm + roll_pwm - pitch_pwm + yaw_pwm
+
+        self.motor_commands = [int(np.clip(m, 1000, 2000)) for m in [m1,m2,m3,m4]]
+
+        # Simulate position change (very rough, just for visualization)
+        # Add noise for IMU/GPS simulation could be here
+        self.position += 0.00001 * pos_error  # moves slowly toward target
+
+        # Save history
+        self.position_history.append(self.position.copy())
+        self.rpyt_history.append(self.state.copy())
+        self.motor_history.append(self.motor_commands.copy())
+
+        self.time += self.dt
+
+        return {
+            "time": self.time,
+            "position": self.position.tolist(),
+            "state": self.state.tolist(),
+            "motor_commands": self.motor_commands
+        }
+  `;
+
+  await pyodide.runPythonAsync(pyCode);
+
+  sim = pyodide.globals.get("Simulator");
 }
 
-function updateDroneModel() {
-  // Convert RPY (degrees) to radians for rotation
-  droneModel.rotation.x = THREE.MathUtils.degToRad(droneState.roll);
-  droneModel.rotation.y = THREE.MathUtils.degToRad(droneState.pitch);
-  droneModel.rotation.z = THREE.MathUtils.degToRad(droneState.yaw);
+async function init() {
+  await loadPyodideAndPackages();
+  initMap();
+  init3D();
+  initPlots();
 
-  // Position update (simple flat coords, ignoring lat/lon scaling)
-  // For demo, convert lat/lon differences roughly to meters:
-  const lat0 = droneState.position.lat;
-  const lon0 = droneState.position.lon;
-  // For visualization, keep position near origin, move on X-Y plane:
-  droneModel.position.x = (lat0 - 12.9716) * 111139; // approx meters per deg latitude
-  droneModel.position.y = (lon0 - 77.5946) * 111139 * Math.cos(lat0 * Math.PI/180);
-  droneModel.position.z = droneState.position.alt;
+  document.getElementById("controlForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    startSimulation();
+  });
 }
 
-function animateThreeJS() {
-  requestAnimationFrame(animateThreeJS);
-  renderer.render(scene, camera);
+function initMap() {
+  map = L.map("map").setView([12.9716, 77.5946], 15);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+  }).addTo(map);
+
+  droneMarker = L.marker([12.9716, 77.5946]).addTo(map);
+  dronePathLatLngs = [];
+  pathLine = L.polyline(dronePathLatLngs, {color: "blue"}).addTo(map);
 }
 
-// --- Plotly Setup ---
+function init3D() {
+  const width = 400;
+  const height = 300;
+
+  threeScene = new THREE.Scene();
+  threeCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+  threeRenderer = new THREE.WebGLRenderer({ antialias: true });
+  threeRenderer.setSize(width, height);
+  document.getElementById("threeDcanvas").appendChild(threeRenderer.domElement);
+
+  controls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
+  controls.enablePan = false;
+  controls.minDistance = 2;
+  controls.maxDistance = 10;
+  controls.target.set(0, 0, 0);
+
+  // Lighting
+  const ambientLight = new THREE.AmbientLight(0xcccccc, 0.5);
+  threeScene.add(ambientLight);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  directionalLight.position.set(5, 10, 7);
+  threeScene.add(directionalLight);
+
+  // Drone model - simple box for now
+  const geometry = new THREE.BoxGeometry(1, 0.2, 1);
+  const material = new THREE.MeshStandardMaterial({ color: 0x0077ff });
+  droneMesh = new THREE.Mesh(geometry, material);
+  threeScene.add(droneMesh);
+
+  threeCamera.position.set(5, 5, 5);
+  controls.update();
+
+  animate3D();
+}
+
+function animate3D() {
+  requestAnimationFrame(animate3D);
+  controls.update();
+  threeRenderer.render(threeScene, threeCamera);
+}
+
 function initPlots() {
-  const rpytLayout = {
-    margin: {t: 20, b: 40, l: 40, r: 20},
-    yaxis: {range: [-180, 180]},
-    xaxis: {title: 'Time (s)'},
-    legend: {orientation: "h"},
-    height: '100%'
-  };
-  Plotly.newPlot('rpyt-plotly', [
-    {y:[], x:[], name:'Roll (°)', mode:'lines', line:{color:'red'}},
-    {y:[], x:[], name:'Pitch (°)', mode:'lines', line:{color:'green'}},
-    {y:[], x:[], name:'Yaw (°)', mode:'lines', line:{color:'blue'}},
-    {y:[], x:[], name:'Thrust', mode:'lines', line:{color:'orange'}}
-  ], rpytLayout, {responsive:true});
+  const time = [];
+  const emptyData = [];
 
-  const motorLayout = {
-    margin: {t: 20, b: 40, l: 40, r: 20},
-    yaxis: {range: [1000, 2000], title: 'PWM Signal'},
-    xaxis: {title: 'Time (s)'},
-    legend: {orientation: "h"},
-    height: '100%'
-  };
-  Plotly.newPlot('motor-plotly', [
-    {y:[], x:[], name:'Motor 1', mode:'lines', line:{color:'purple'}},
-    {y:[], x:[], name:'Motor 2', mode:'lines', line:{color:'cyan'}},
-    {y:[], x:[], name:'Motor 3', mode:'lines', line:{color:'magenta'}},
-    {y:[], x:[], name:'Motor 4', mode:'lines', line:{color:'lime'}}
-  ], motorLayout, {responsive:true});
-}
-
-function updatePlots() {
-  const maxPoints = 300;
-  // RPYT
-  Plotly.extendTraces('rpyt-plotly', {
-    x: [[simTime],[simTime],[simTime],[simTime]],
-    y: [[droneState.roll],[droneState.pitch],[droneState.yaw],[droneState.thrust]]
-  }, [0,1,2,3], maxPoints);
-
-  // Motor Commands
-  Plotly.extendTraces('motor-plotly', {
-    x: [[simTime],[simTime],[simTime],[simTime]],
-    y: [droneState.motorCommands.map(v => v)]
-  }, [0,1,2,3], maxPoints);
-}
-
-// --- Update RPYT HUD ---
-function updateRPYTHUD() {
-  document.getElementById('roll-val').textContent = droneState.roll.toFixed(1);
-  document.getElementById('pitch-val').textContent = droneState.pitch.toFixed(1);
-  document.getElementById('yaw-val').textContent = droneState.yaw.toFixed(1);
-  document.getElementById('thrust-val').textContent = droneState.thrust.toFixed(2);
-}
-
-// --- Dummy Simulation Step ---
-function simulateStep() {
-  if (!simulationRunning) return;
-
-  simTime += simStep;
-
-  // Dummy: increment position lat by small delta, and cycle yaw between -180 to 180
-  droneState.position.lat += 0.00001; 
-  droneState.position.lon += 0.00001;
-  droneState.position.alt = 5 + 2 * Math.sin(simTime/5);
-
-  droneState.roll = 10 * Math.sin(simTime);
-  droneState.pitch = 8 * Math.sin(simTime/2);
-  droneState.yaw = (simTime * 20) % 360 - 180;
-  droneState.thrust = 0.6 + 0.4 * Math.abs(Math.sin(simTime/3));
-
-  // Dummy motor commands (just oscillate around 1500)
-  for (let i = 0; i < 4; i++) {
-    droneState.motorCommands[i] = 1500 + 200 * Math.sin(simTime + i);
+  function initPlot(divId, name, color) {
+    Plotly.newPlot(divId, [{
+      x: time,
+      y: emptyData,
+      type: 'scatter',
+      mode: 'lines',
+      line: {color: color}
+    }],
+    {
+      margin: {t:30, b:30, l:40, r:20},
+      yaxis: {title: name}
+    });
   }
 
-  updateDroneModel();
-  updateRPYTHUD();
-  updatePlots();
+  initPlot("plotRoll", "Roll (deg)", "red");
+  initPlot("plotPitch", "Pitch (deg)", "green");
+  initPlot("plotYaw", "Yaw (deg)", "blue");
+  initPlot("plotThrust", "Thrust (0-1)", "orange");
 }
 
-// --- Handle Form Submission ---
-document.getElementById('input-form').addEventListener('submit', (e) => {
-  e.preventDefault();
-
-  // Parse inputs
-  droneState.position.lat = parseFloat(document.getElementById('start-lat').value);
-  droneState.position.lon = parseFloat(document.getElementById('start-lon').value);
-  droneState.position.alt = parseFloat(document.getElementById('start-alt').value);
-
-  // Parse waypoints
-  const wpText = document.getElementById('waypoints').value.trim();
-  waypoints = wpText.split('\n').map(line => {
-    const parts = line.split(',').map(s => parseFloat(s.trim()));
-    return {lat: parts[0], lon: parts[1], alt: parts[2]};
-  });
-
-  rtlEnabled = document.getElementById('rtl-toggle').checked;
-
-  pidGains.kp = parseFloat(document.getElementById('kp').value);
-  pidGains.ki = parseFloat(document.getElementById('ki').value);
-  pidGains.kd = parseFloat(document.getElementById('kd').value);
-
-  losGain = parseFloat(document.getElementById('los-gain').value);
-
-  // Reset simulation state variables if needed
-  simTime = 0;
-
-  // Start simulation
-  simulationRunning = true;
-});
-
-// --- Initialization ---
-window.onload = () => {
-  initThreeJS();
-  initPlots();
-  animateThreeJS();
-
-  // Run simulation step every simStep seconds
-  setInterval(simulateStep, simStep * 1000);
+let simInstance = null;
+let simInterval = null;
+let simData = {
+  time: [],
+  roll: [],
+  pitch: [],
+  yaw: [],
+  thrust: [],
+  lat: [],
+  lon: [],
+  alt: [],
+  motors: [[],[],[],[]]
 };
+
+async function startSimulation() {
+  if (simInterval) {
+    clearInterval(simInterval);
+    simInterval = null;
+  }
+
+  // Reset data
+  simData = {
+    time: [],
+    roll: [],
+    pitch: [],
+    yaw: [],
+    thrust: [],
+    lat: [],
+    lon: [],
+    alt: [],
+    motors: [[],[],[],[]]
+  };
+
+  // Get inputs
+  const startLat = parseFloat(document.getElementById("startLat").value);
+  const startLon = parseFloat(document.getElementById("startLon").value);
+  const startAlt = parseFloat(document.getElementById("startAlt").value);
+
+  const wpText = document.getElementById("waypoints").value.trim();
+  let waypoints = [];
+  if (wpText) {
+    const lines = wpText.split("\n");
+    for (const line of lines) {
+      const parts = line.split(",");
+      if (parts.length === 3) {
+        waypoints.push([
+          parseFloat(parts[0]),
+          parseFloat(parts[1]),
+          parseFloat(parts[2]),
+        ]);
+      }
+    }
+  }
+
+  const rtl = document.getElementById("rtlCheck").checked;
+  const kp = parseFloat(document.getElementById("kp").value);
+  const ki = parseFloat(document.getElementById("ki").value);
+  const kd = parseFloat(document.getElementById("kd").value);
+  const losGain = parseFloat(document.get
