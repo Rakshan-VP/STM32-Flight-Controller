@@ -1,9 +1,11 @@
+/* General page styling */
 body {
   margin: 0;
   font-family: Arial, sans-serif;
   background: #f2f2f2;
 }
 
+/* Grid layout for the simulator */
 #layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -14,7 +16,11 @@ body {
   box-sizing: border-box;
 }
 
-#input-panel, #plots-rpyt, #sim-3d, #map-view {
+/* Shared panel styling */
+#input-panel,
+#plots-rpyt,
+#sim-3d,
+#map-view {
   background: white;
   padding: 10px;
   border-radius: 10px;
@@ -24,17 +30,17 @@ body {
   box-sizing: border-box;
 }
 
-#map2d {
-  width: 100%;
-  height: 100%;
-}
-
+/* Plot container styling */
+#map2d,
 #3d {
   width: 100%;
   height: 100%;
 }
 
-#rpy-values, #pos-values, #motor-values {
+/* Display text styling */
+#rpy-values,
+#pos-values,
+#motor-values {
   font-size: 14px;
   margin: 5px 0;
 }
