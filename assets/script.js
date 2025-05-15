@@ -1,5 +1,3 @@
-import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js";
-
 let pyodide;
 
 async function initPyodide() {
