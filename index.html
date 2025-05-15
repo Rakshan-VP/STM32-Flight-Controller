@@ -2,75 +2,55 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Simple Quadcopter Simulator</title>
+  <title>Quadcopter Simulator</title>
   <link rel="stylesheet" href="assets/style.css" />
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
-  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
-  />
-  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-  <!-- Include OrbitControls for 3D -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.148.0/examples/js/controls/OrbitControls.js"></script>
+  <script type="module" src="script/main.js"></script>
 </head>
 <body>
-  <div id="container">
-    <div id="inputPanel" class="panel">
-      <h2>Input & Controls</h2>
-      <form id="controlForm">
-        <fieldset>
-          <legend>Start Position</legend>
-          <label>Latitude: <input type="number" id="startLat" value="12.9716" step="0.0001" /></label><br />
-          <label>Longitude: <input type="number" id="startLon" value="77.5946" step="0.0001" /></label><br />
-          <label>Altitude (m): <input type="number" id="startAlt" value="0" step="0.1" /></label>
-        </fieldset>
+  <div id="layout">
+    <div id="input-panel">
+      <h3>Control Panel</h3>
+      <label>Start Position (lat, lon, alt):</label><br/>
+      <input type="text" id="start-lat" placeholder="Lat"/>
+      <input type="text" id="start-lon" placeholder="Lon"/>
+      <input type="text" id="start-alt" placeholder="Alt"/><br/><br/>
 
-        <fieldset>
-          <legend>Waypoints (lat, lon, alt) - CSV lines</legend>
-          <textarea id="waypoints" rows="5" placeholder="12.9720,77.5950,10&#10;12.9730,77.5960,20"></textarea>
-        </fieldset>
+      <label>Waypoint (lat, lon, alt):</label><br/>
+      <input type="text" id="wp-lat" placeholder="Lat"/>
+      <input type="text" id="wp-lon" placeholder="Lon"/>
+      <input type="text" id="wp-alt" placeholder="Alt"/><br/><br/>
 
-        <fieldset>
-          <label><input type="checkbox" id="rtlCheck" /> Return To Launch (RTL)</label>
-        </fieldset>
+      <label>PID Gains:</label><br/>
+      Kp: <input type="number" id="kp" step="0.1" value="1.0"/><br/>
+      Ki: <input type="number" id="ki" step="0.1" value="0.1"/><br/>
+      Kd: <input type="number" id="kd" step="0.1" value="0.01"/><br/><br/>
 
-        <fieldset>
-          <legend>PID Gains</legend>
-          <label>Kp: <input type="number" id="kp" value="1.0" step="0.01" /></label><br />
-          <label>Ki: <input type="number" id="ki" value="0.0" step="0.001" /></label><br />
-          <label>Kd: <input type="number" id="kd" value="0.1" step="0.01" /></label>
-        </fieldset>
+      <label>LOS Gain:</label><br/>
+      <input type="number" id="los" step="0.1" value="1.0"/><br/><br/>
 
-        <fieldset>
-          <legend>LOS Guidance Gain</legend>
-          <label>Gain: <input type="number" id="losGain" value="1.0" step="0.01" /></label>
-        </fieldset>
-
-        <button type="submit">Start Simulation</button>
-      </form>
+      <button id="start-sim">Start Simulation</button>
     </div>
 
-    <div id="rpyPlots" class="panel">
-      <h2>RPYT Plots</h2>
-      <div id="plotRoll" class="plot"></div>
-      <div id="plotPitch" class="plot"></div>
-      <div id="plotYaw" class="plot"></div>
-      <div id="plotThrust" class="plot"></div>
+    <div id="sim-3d">
+      <div id="rpy-values"></div>
+      <div id="3d-view"></div>
+      <div id="pos-values"></div>
+      <div id="motor-values"></div>
     </div>
 
-    <div id="map" class="panel"></div>
+    <div id="plots-rpyt">
+      <div id="plot-roll"></div>
+      <div id="plot-pitch"></div>
+      <div id="plot-yaw"></div>
+      <div id="plot-thrust"></div>
+    </div>
 
-    <div id="threeDPanel" class="panel">
-      <h2>3D Drone View</h2>
-      <div id="rpyValues" class="info-box"></div>
-      <div id="threeDcanvas"></div>
-      <div id="positionValues" class="info-box"></div>
-      <div id="motorCommands" class="info-box"></div>
+    <div id="map-view">
+      <div id="2d-map"></div>
     </div>
   </div>
-
-  <script src="assets/script.js"></script>
 </body>
 </html>
