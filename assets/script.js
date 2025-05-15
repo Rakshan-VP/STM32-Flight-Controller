@@ -26,43 +26,67 @@ function updateMapPosition(lat, lon) {
   Plotly.extendTraces('map2d', { x: [[lon]], y: [[lat]] }, [0]);
 }
 
-// Initialize Three.js 3D drone model (simple cube as placeholder)
-let scene, camera, renderer, cube;
 function init3DModel() {
-  const container = document.getElementById('3d');
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  container.appendChild(renderer.domElement);
-
-  const geometry = new THREE.BoxGeometry(1, 0.3, 0.5);
-  const material = new THREE.MeshNormalMaterial();
-  cube = new THREE.Mesh(geometry, material);
-  scene.add(cube);
-
-  camera.position.z = 3;
-
-  animate3D();
+  Plotly.newPlot('3d', [{
+    type: 'scatter3d',
+    mode: 'lines+markers',
+    x: [0, 0],
+    y: [0, 0],
+    z: [0, 1],
+    line: { color: 'red', width: 6 },
+    marker: { size: 4 }
+  }], {
+    scene: {
+      xaxis: { range: [-1, 1], title: 'X' },
+      yaxis: { range: [-1, 1], title: 'Y' },
+      zaxis: { range: [-1, 1], title: 'Z' },
+      aspectratio: { x: 1, y: 1, z: 1 }
+    },
+    margin: { t: 0 }
+  });
 }
 
-// Animate the 3D model continuously
-function animate3D() {
-  requestAnimationFrame(animate3D);
-  renderer.render(scene, camera);
-}
+// // Animate the 3D model continuously
+// function animate3D() {
+//   requestAnimationFrame(animate3D);
+//   renderer.render(scene, camera);
+// }
 
 // Update 3D drone orientation from roll, pitch, yaw (in degrees)
 function update3DOrientation(roll, pitch, yaw) {
-  // Convert degrees to radians
+   // Convert degrees to radians
   const r = roll * Math.PI / 180;
   const p = pitch * Math.PI / 180;
   const y = yaw * Math.PI / 180;
 
-  // Apply rotation in ZYX order (yaw, pitch, roll)
-  cube.rotation.x = p;
-  cube.rotation.y = y;
-  cube.rotation.z = r;
+  // Rotation matrix ZYX
+  const cx = Math.cos(r), sx = Math.sin(r);
+  const cy = Math.cos(p), sy = Math.sin(p);
+  const cz = Math.cos(y), sz = Math.sin(y);
+
+  // ZYX rotation (yaw, pitch, roll) → direction vector
+  const vx = cy * cz;
+  const vy = cy * sz;
+  const vz = -sy;
+
+  Plotly.react('3d', [{
+    type: 'scatter3d',
+    mode: 'lines+markers',
+    x: [0, vx],
+    y: [0, vy],
+    z: [0, vz],
+    line: { color: 'red', width: 6 },
+    marker: { size: 4 }
+  }], {
+    scene: {
+      xaxis: { range: [-1, 1], title: 'X' },
+      yaxis: { range: [-1, 1], title: 'Y' },
+      zaxis: { range: [-1, 1], title: 'Z' },
+      aspectratio: { x: 1, y: 1, z: 1 }
+    },
+    margin: { t: 0 }
+  });
+
 }
 
 function getInputs() {
