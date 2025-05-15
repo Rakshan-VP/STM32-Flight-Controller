@@ -2,87 +2,75 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Quadcopter Simulator</title>
+  <title>Simple Quadcopter Simulator</title>
   <link rel="stylesheet" href="assets/style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+  />
+  <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>
+  <!-- Include OrbitControls for 3D -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
-  <div class="grid-container">
-    <section id="input-section">
-      <h2>1) Inputs & Gains</h2>
-      <form id="input-form">
+  <div id="container">
+    <div id="inputPanel" class="panel">
+      <h2>Input & Controls</h2>
+      <form id="controlForm">
         <fieldset>
-          <legend>Start Position (Lat, Lon, Alt)</legend>
-          <input type="number" step="0.000001" id="start-lat" placeholder="Latitude" value="0" required />
-          <input type="number" step="0.000001" id="start-lon" placeholder="Longitude" value="0" required />
-          <input type="number" step="0.1" id="start-alt" placeholder="Altitude (m)" value="0" required />
+          <legend>Start Position</legend>
+          <label>Latitude: <input type="number" id="startLat" value="12.9716" step="0.0001" /></label><br />
+          <label>Longitude: <input type="number" id="startLon" value="77.5946" step="0.0001" /></label><br />
+          <label>Altitude (m): <input type="number" id="startAlt" value="0" step="0.1" /></label>
         </fieldset>
+
         <fieldset>
-          <legend>Waypoints (Lat, Lon, Alt) — one per line, comma separated</legend>
-          <textarea id="waypoints" rows="5" placeholder="12.9720,77.5950,5\n12.9730,77.5960,10" required></textarea>
+          <legend>Waypoints (lat, lon, alt) - CSV lines</legend>
+          <textarea id="waypoints" rows="5" placeholder="12.9720,77.5950,10&#10;12.9730,77.5960,20"></textarea>
         </fieldset>
+
         <fieldset>
-          <legend>Return to Launch (RTL)</legend>
-          <input type="checkbox" id="rtl-toggle" />
-          <label for="rtl-toggle">Enable RTL</label>
+          <label><input type="checkbox" id="rtlCheck" /> Return To Launch (RTL)</label>
         </fieldset>
+
         <fieldset>
           <legend>PID Gains</legend>
-          <label>Kp: <input type="number" step="0.01" id="kp" value="1.0" required /></label><br />
-          <label>Ki: <input type="number" step="0.001" id="ki" value="0.0" required /></label><br />
-          <label>Kd: <input type="number" step="0.01" id="kd" value="0.1" required /></label>
+          <label>Kp: <input type="number" id="kp" value="1.0" step="0.01" /></label><br />
+          <label>Ki: <input type="number" id="ki" value="0.0" step="0.001" /></label><br />
+          <label>Kd: <input type="number" id="kd" value="0.1" step="0.01" /></label>
         </fieldset>
+
         <fieldset>
           <legend>LOS Guidance Gain</legend>
-          <input type="number" step="0.01" id="los-gain" value="0.5" required />
+          <label>Gain: <input type="number" id="losGain" value="1.0" step="0.01" /></label>
         </fieldset>
+
         <button type="submit">Start Simulation</button>
       </form>
-    </section>
+    </div>
 
-    <section id="map-section">
-      <h2>4) 3D Map + RPYT Display</h2>
-      <div id="rpytupd" style="display: flex;">
-        <div style="width: 150px; padding: 10px;">
-          <h4>RPYT</h4>
-          <p>Roll: <span id="roll-val">0</span>°</p>
-          <p>Pitch: <span id="pitch-val">0</span>°</p>
-          <p>Yaw: <span id="yaw-val">0</span>°</p>
-          <p>Thrust: <span id="thrust-val">0</span></p>
-        </div>
-      
-        <div id="threejs-container" style="flex-grow: 1; height: 500px;"></div>
-      
-        <div style="width: 200px; padding: 10px;">
-          <h4>Position</h4>
-          <p>Lat: <span id="pos-lat">0</span></p>
-          <p>Lon: <span id="pos-lon">0</span></p>
-          <p>Alt: <span id="pos-alt">0</span></p>
-        </div>
-      </div>
-    </section>
+    <div id="rpyPlots" class="panel">
+      <h2>RPYT Plots</h2>
+      <div id="plotRoll" class="plot"></div>
+      <div id="plotPitch" class="plot"></div>
+      <div id="plotYaw" class="plot"></div>
+      <div id="plotThrust" class="plot"></div>
+    </div>
 
-    <section id="rpyt-plot">
-      <h2>2) RPYT vs Time</h2>
-      <div id="rpyt-plotly"></div>
-    </section>
+    <div id="map" class="panel"></div>
 
-    <section id="map-2d">
-      <h2>3) 2D Map: Drone Path</h2>
-      <div id="map2d" style="width: 100%; height: 400px;"></div>
-    </section>
-
+    <div id="threeDPanel" class="panel">
+      <h2>3D Drone View</h2>
+      <div id="rpyValues" class="info-box"></div>
+      <div id="threeDcanvas"></div>
+      <div id="positionValues" class="info-box"></div>
+      <div id="motorCommands" class="info-box"></div>
+    </div>
   </div>
 
-  <!-- Three.js r146 - classic builds -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
-
-  <!-- Plotly latest -->
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-
-  <!-- Main JS -->
   <script src="assets/script.js"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </body>
 </html>
