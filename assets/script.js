@@ -154,7 +154,7 @@ window.addEventListener('DOMContentLoaded', () => {
     initPlots();
     initMapPlot();
     init3DModel();
-    console.log("Pyodide, plots, map, and 3D model initialized.");
+    console.log("Pyodide initialized.");
   });
 });
 
