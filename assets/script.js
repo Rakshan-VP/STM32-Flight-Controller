@@ -7,6 +7,66 @@ async function initPyodide() {
   pyodide.runPython(simCode);
 }
 
+// Initialize Leaflet 2D map
+let map;
+function initMap() {
+  map = L.map('map2d').setView([0, 0], 2); // start zoomed out on the globe
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+  }).addTo(map);
+}
+
+// Update 2D map position marker
+let marker;
+function updateMapPosition(lat, lon) {
+  if (!marker) {
+    marker = L.marker([lat, lon]).addTo(map);
+  } else {
+    marker.setLatLng([lat, lon]);
+  }
+  map.setView([lat, lon], 12); // zoom to current position
+}
+
+// Initialize Three.js 3D drone model (simple cube as placeholder)
+let scene, camera, renderer, cube;
+function init3DModel() {
+  const container = document.getElementById('model3d');
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  container.appendChild(renderer.domElement);
+
+  const geometry = new THREE.BoxGeometry(1, 0.3, 0.5);
+  const material = new THREE.MeshNormalMaterial();
+  cube = new THREE.Mesh(geometry, material);
+  scene.add(cube);
+
+  camera.position.z = 3;
+
+  animate3D();
+}
+
+// Animate the 3D model continuously
+function animate3D() {
+  requestAnimationFrame(animate3D);
+  renderer.render(scene, camera);
+}
+
+// Update 3D drone orientation from roll, pitch, yaw (in degrees)
+function update3DOrientation(roll, pitch, yaw) {
+  // Convert degrees to radians
+  const r = roll * Math.PI / 180;
+  const p = pitch * Math.PI / 180;
+  const y = yaw * Math.PI / 180;
+
+  // Apply rotation in ZYX order (yaw, pitch, roll)
+  cube.rotation.x = p;
+  cube.rotation.y = y;
+  cube.rotation.z = r;
+}
+
 function getInputs() {
   return {
     start: {
@@ -29,14 +89,18 @@ function getInputs() {
 function updateDisplay(data) {
   const { roll, pitch, yaw, thrust, motors, pos } = data;
 
-  document.getElementById("rpy-values").innerText = `RPY: ${roll}, ${pitch}, ${yaw}`;
-  document.getElementById("pos-values").innerText = `Position: ${pos.lat}, ${pos.lon}, ${pos.alt}`;
-  document.getElementById("motor-values").innerText = `Motors: ${motors.join(", ")}`;
+  document.getElementById("rpy-values").innerText = `RPY: ${roll.toFixed(2)}, ${pitch.toFixed(2)}, ${yaw.toFixed(2)}`;
+  document.getElementById("pos-values").innerText = `Position: ${pos.lat.toFixed(5)}, ${pos.lon.toFixed(5)}, ${pos.alt.toFixed(2)}`;
+  document.getElementById("motor-values").innerText = `Motors: ${motors.map(m => m.toFixed(0)).join(", ")}`;
 
   Plotly.extendTraces('plot-roll', { y: [[roll]] }, [0]);
   Plotly.extendTraces('plot-pitch', { y: [[pitch]] }, [0]);
   Plotly.extendTraces('plot-yaw', { y: [[yaw]] }, [0]);
   Plotly.extendTraces('plot-thrust', { y: [[thrust]] }, [0]);
+
+  // Update map and 3D orientation
+  updateMapPosition(pos.lat, pos.lon);
+  update3DOrientation(roll, pitch, yaw);
 }
 
 function initPlots() {
@@ -47,7 +111,8 @@ function initPlots() {
       mode: 'lines',
       line: { color: 'blue' }
     }], {
-      title: `${type.toUpperCase()} vs Time`
+      title: `${type.toUpperCase()} vs Time`,
+      margin: { t: 30 }
     });
   });
 }
@@ -67,7 +132,10 @@ document.getElementById("start-sim").addEventListener("click", async () => {
   }, 200);
 });
 
+// Initialize everything
 initPyodide().then(() => {
   initPlots();
-  console.log("Pyodide and plots initialized.");
+  initMap();
+  init3DModel();
+  console.log("Pyodide, plots, map, and 3D model initialized.");
 });
