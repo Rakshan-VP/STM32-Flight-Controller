@@ -48,10 +48,20 @@
       gap: 10px;
     }
 
-    .gains label {
+    .gain-row {
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
       font-size: 14px;
+      gap: 10px;
+    }
+
+    .gain-row label {
+      width: 60px;
+    }
+
+    .gain-row input {
+      width: 60px;
     }
 
     .bottom-half {
@@ -88,10 +98,30 @@
     </div>
 
     <div class="gains">
-      <label>Roll P Gain: <input type="number" id="roll_p" value="1.0" step="0.1"></label>
-      <label>Pitch P Gain: <input type="number" id="pitch_p" value="1.0" step="0.1"></label>
-      <label>Yaw P Gain: <input type="number" id="yaw_p" value="1.0" step="0.1"></label>
-      <label>Thrust P Gain: <input type="number" id="thrust_p" value="1.0" step="0.1"></label>
+      <div class="gain-row">
+        <label>Roll:</label>
+        <input type="number" id="roll_p" value="1.0" step="0.1" placeholder="P">
+        <input type="number" id="roll_i" value="0.0" step="0.01" placeholder="I">
+        <input type="number" id="roll_d" value="0.0" step="0.01" placeholder="D">
+      </div>
+      <div class="gain-row">
+        <label>Pitch:</label>
+        <input type="number" id="pitch_p" value="1.0" step="0.1" placeholder="P">
+        <input type="number" id="pitch_i" value="0.0" step="0.01" placeholder="I">
+        <input type="number" id="pitch_d" value="0.0" step="0.01" placeholder="D">
+      </div>
+      <div class="gain-row">
+        <label>Yaw:</label>
+        <input type="number" id="yaw_p" value="1.0" step="0.1" placeholder="P">
+        <input type="number" id="yaw_i" value="0.0" step="0.01" placeholder="I">
+        <input type="number" id="yaw_d" value="0.0" step="0.01" placeholder="D">
+      </div>
+      <div class="gain-row">
+        <label>Thrust:</label>
+        <input type="number" id="thrust_p" value="1.0" step="0.1" placeholder="P">
+        <input type="number" id="thrust_i" value="0.0" step="0.01" placeholder="I">
+        <input type="number" id="thrust_d" value="0.0" step="0.01" placeholder="D">
+      </div>
     </div>
   </div>
 
