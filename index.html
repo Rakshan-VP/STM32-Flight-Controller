@@ -97,43 +97,36 @@
       <div id="path" style="width:100%; height:100%;"></div>
     </div>
 
-    <div class="gains">
-      <div class="gain-row">
-        <label>Roll:</label>
-        <label for="roll_p">P:</label>
-        <input type="number" id="roll_p" value="1.2" step="0.1" placeholder="P">
-        <label for="roll_i">I:</label>
-        <input type="number" id="roll_i" value="0.0" step="0.01" placeholder="I">
-        <label for="roll_d">D:</label>
-        <input type="number" id="roll_d" value="0.0" step="0.01" placeholder="D">
-      </div>
-      <div class="gain-row">
-        <label>Pitch:</label>
-        <label for="pitch_p">P:</label>
-        <input type="number" id="pitch_p" value="1.0" step="0.1" placeholder="P">
-        <label for="pitch_i">I:</label>
-        <input type="number" id="pitch_i" value="0.0" step="0.01" placeholder="I">
-        <label for="pitch_d">D:</label>
-        <input type="number" id="pitch_d" value="0.0" step="0.01" placeholder="D">
-      </div>
-      <div class="gain-row">
-        <label>Yaw:</label>
-        <label for="yaw_p">P:</label>
-        <input type="number" id="yaw_p" value="1.0" step="0.1" placeholder="P">
-        <label for="yaw_i">I:</label>
-        <input type="number" id="yaw_i" value="0.0" step="0.01" placeholder="I">
-        <label for="yaw_d">D:</label>
-        <input type="number" id="yaw_d" value="0.0" step="0.01" placeholder="D">
-      </div>
-      <div class="gain-row">
-        <label>Thrust:</label>
-        <label for="thrust_p">P:</label>
-        <input type="number" id="thrust_p" value="1.0" step="0.1" placeholder="P">
-        <label for="thrust_i">I:</label>
-        <input type="number" id="thrust_i" value="0.0" step="0.01" placeholder="I">
-        <label for="thrust_d">D:</label>
-        <input type="number" id="thrust_d" value="0.0" step="0.01" placeholder="D">
-      </div>
+    <div class="parameters" style="width: 27.5%; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px;">
+      <h3>Parameters</h3>
+      <label>
+        Mass (kg):
+        <input type="number" id="mass" value="1.5" step="0.1" placeholder="Mass of drone">
+      </label>
+      <label>
+        Ix (kg·m²):
+        <input type="number" id="ix" value="0.02" step="0.001" placeholder="Moment of inertia Ix">
+      </label>
+      <label>
+        Iy (kg·m²):
+        <input type="number" id="iy" value="0.02" step="0.001" placeholder="Moment of inertia Iy">
+      </label>
+      <label>
+        Iz (kg·m²):
+        <input type="number" id="iz" value="0.04" step="0.001" placeholder="Moment of inertia Iz">
+      </label>
+      <label>
+        Max Roll (°):
+        <input type="number" id="max_roll" value="30" step="1" placeholder="Max roll in degrees">
+      </label>
+      <label>
+        Max Pitch (°):
+        <input type="number" id="max_pitch" value="30" step="1" placeholder="Max pitch in degrees">
+      </label>
+      <label>
+        Thrust at 100% (N):
+        <input type="number" id="max_thrust" value="30" step="0.1" placeholder="Max thrust">
+      </label>
     </div>
   </div>
 
