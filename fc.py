@@ -29,10 +29,10 @@ def fc_step(r, p, y, T, gains, dt=0.01):
     # Motor layout: M1, M2, M3, M4
     # Mix pitch, roll, yaw corrections and add thrust
     motors = np.zeros(4)
-    motors[0] = pid_output[1] + pid_output[0] - pid_output[2] + pid_output[3]  # Front Right
-    motors[1] = pid_output[1] + pid_output[0] + pid_output[2] + pid_output[3]  # Front Left
-    motors[2] = pid_output[1] - pid_output[0] - pid_output[2] + pid_output[3]  # Rear Left
-    motors[3] = pid_output[1] - pid_output[0] + pid_output[2] + pid_output[3]  # Rear Right
+    motors[0] = + pid_output[1] + pid_output[0] - pid_output[2] + pid_output[3]  # Front Right
+    motors[1] = - pid_output[1] + pid_output[0] + pid_output[2] + pid_output[3]  # Front Left
+    motors[2] = - pid_output[1] - pid_output[0] - pid_output[2] + pid_output[3]  # Rear Left
+    motors[3] = + pid_output[1] - pid_output[0] + pid_output[2] + pid_output[3]  # Rear Right
 
     # Clamp motor PWM signals between 1000 and 2000
     output_pwm = np.clip(motors, 1000, 2000)
