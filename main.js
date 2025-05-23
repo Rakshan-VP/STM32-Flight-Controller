@@ -3,12 +3,12 @@ let pyodide;
 async function loadPyodideAndPackages() {
   pyodide = await loadPyodide();
   await pyodide.loadPackage("micropip");
-  await pyodide.runPythonAsync(`
-    import sys
-    sys.path.append(".")
-    from flight_controller import flight_controller
-    from drone_dynamics import motor_to_rpyt
-  `);
+  const fcCode = await fetch("flight_controller.py").then(r => r.text());
+  pyodide.runPython(fcCode);
+
+  const dynCode = await fetch("drone_dynamics.py").then(r => r.text());
+  pyodide.runPython(dynCode);
+
 }
 
 loadPyodideAndPackages();
