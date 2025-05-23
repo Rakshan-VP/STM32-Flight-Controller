@@ -21,7 +21,7 @@ def fc_step(r, p, y, T, gains):
     Kd = gains[:, 2]
 
     output = Kp * error + Ki * integral + Kd * derivative
-    output_pwm = 1500 + output * 500
+    output_pwm = 1500
     output_pwm = np.clip(output_pwm, 1000, 2000)
 
     roll, pitch, yaw, thrust = output_pwm
