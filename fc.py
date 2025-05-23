@@ -28,13 +28,11 @@ def fc_step(r, p, y, T, gains, dt=0.01):
     # Mixer for quadcopter (simplified)
     # Motor layout: M1, M2, M3, M4
     # Mix pitch, roll, yaw corrections and add thrust
-    # For example (assuming motor PWM base is 1000 to 2000)
-    base_pwm = 1000 + T * 1000  # scale thrust 0-1 to PWM 1000-2000
     motors = np.zeros(4)
-    motors[0] = base_pwm + pid_output[1] + pid_output[0] - pid_output[2]  # Front Right
-    motors[1] = base_pwm - pid_output[1] + pid_output[0] + pid_output[2]  # Front Left
-    motors[2] = base_pwm - pid_output[1] - pid_output[0] - pid_output[2]  # Rear Left
-    motors[3] = base_pwm + pid_output[1] - pid_output[0] + pid_output[2]  # Rear Right
+    motors[0] = pid_output[1] + pid_output[0] - pid_output[2] + pid_output[3]  # Front Right
+    motors[1] = pid_output[1] + pid_output[0] + pid_output[2] + pid_output[3]  # Front Left
+    motors[2] = pid_output[1] - pid_output[0] - pid_output[2] + pid_output[3]  # Rear Left
+    motors[3] = pid_output[1] - pid_output[0] + pid_output[2] + pid_output[3]  # Rear Right
 
     # Clamp motor PWM signals between 1000 and 2000
     output_pwm = np.clip(motors, 1000, 2000)
