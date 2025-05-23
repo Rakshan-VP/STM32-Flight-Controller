@@ -1,33 +1,46 @@
-// Live display for PWM sliders
-const sliders = ['roll', 'pitch', 'yaw', 'thrust'];
-sliders.forEach(axis => {
-  const slider = document.getElementById(axis);
-  const label = document.getElementById(`${axis}Val`);
-  slider.addEventListener('input', () => {
-    label.textContent = slider.value;
-  });
-});
+let pyodide;
 
-// Send command
-function sendRPYT() {
-  const r = parseInt(document.getElementById('roll').value);
-  const p = parseInt(document.getElementById('pitch').value);
-  const y = parseInt(document.getElementById('yaw').value);
-  const t = parseInt(document.getElementById('thrust').value);
-  const mode = document.getElementById('flightMode').value;
-  const rtl = document.getElementById('rtlSwitch').checked;
+async function loadPyodideAndPackages() {
+  pyodide = await loadPyodide();
+  await pyodide.loadPackage("micropip");
+  await pyodide.runPythonAsync(`
+    import sys
+    sys.path.append(".")
+    from flight_controller import flight_controller
+    from drone_dynamics import motor_to_rpyt
+  `);
+}
 
-  const command = {
-    roll: r,
-    pitch: p,
-    yaw: y,
-    thrust: t,
-    mode: mode,
-    rtl_enabled: rtl
+loadPyodideAndPackages();
+
+function updateLabel(id) {
+  document.getElementById(id + "Val").innerText = document.getElementById(id).value;
+}
+
+async function runSimulation() {
+  const cmd = {
+    roll: parseInt(document.getElementById("roll").value),
+    pitch: parseInt(document.getElementById("pitch").value),
+    yaw: parseInt(document.getElementById("yaw").value),
+    thrust: parseInt(document.getElementById("thrust").value)
   };
 
-  console.log("Transmitter Output:", command);
+  let pythonCmd = `cmd = ${JSON.stringify(cmd)}\n` +
+                  `motors = flight_controller(cmd)\n` +
+                  `response = motor_to_rpyt(motors)`;
+  await pyodide.runPythonAsync(pythonCmd);
 
-  // TODO: Pass to Pyodide or simulator logic
-  // Example: pyodide.runPython(`handle_command(${JSON.stringify(command)})`)
+  const motors = pyodide.globals.get("motors").toJs();
+  const response = pyodide.globals.get("response").toJs();
+
+  Plotly.newPlot("rpyPlot", [
+    { y: [response.roll], name: "Roll" },
+    { y: [response.pitch], name: "Pitch" },
+    { y: [response.yaw], name: "Yaw" },
+    { y: [response.thrust], name: "Thrust" },
+  ], { title: "RPYT Response", margin: { t: 30 } });
+
+  Plotly.newPlot("motorPlot", motors.map((m, i) => ({
+    y: [m], name: `Motor ${i+1}`
+  })), { title: "Motor Outputs", margin: { t: 30 } });
 }
