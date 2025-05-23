@@ -23,7 +23,7 @@ def fc_step(r, p, y, T, gains):
     output_pwm = 1500 + output
     output_pwm = np.clip(output_pwm, 1000, 2000)
     
-    actual = output_pwm.copy()
+    actual = output_pwm
     
     roll, pitch, yaw, thrust = output_pwm
     m1 = thrust + pitch - roll + yaw
