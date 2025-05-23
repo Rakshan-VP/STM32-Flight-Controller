@@ -7,32 +7,38 @@ async function startSim() {
 
   let pyodide = await pyodideReadyPromise;
   await pyodide.loadPackage("numpy");
+
   const response = await fetch("fc.py");
   await pyodide.runPythonAsync(await response.text());
 
   let t = 0;
   let pathX = [], pathY = [];
 
-  Plotly.newPlot('rpy_plot', [
-    {x: [], y: [], name: 'Roll_cmd'}, {x: [], y: [], name: 'Pitch_cmd'},
-    {x: [], y: [], name: 'Yaw_cmd'}, {x: [], y: [], name: 'Thrust_cmd'},
-    {x: [], y: [], name: 'Roll_pid'}, {x: [], y: [], name: 'Pitch_pid'},
-    {x: [], y: [], name: 'Yaw_pid'}, {x: [], y: [], name: 'Thrust_pid'},
-  ]);
+  const plotConfigs = [
+    {id: 'roll_plot', name1: 'Roll_cmd', name2: 'Roll_pid'},
+    {id: 'pitch_plot', name1: 'Pitch_cmd', name2: 'Pitch_pid'},
+    {id: 'yaw_plot', name1: 'Yaw_cmd', name2: 'Yaw_pid'},
+    {id: 'thrust_plot', name1: 'Thrust_cmd', name2: 'Thrust_pid'},
+  ];
 
-  Plotly.newPlot('motor_plot', [
-    {x: [], y: [], name: 'M1'}, {x: [], y: [], name: 'M2'},
-    {x: [], y: [], name: 'M3'}, {x: [], y: [], name: 'M4'},
-  ]);
+  plotConfigs.forEach(cfg =>
+    Plotly.newPlot(cfg.id, [
+      {x: [], y: [], name: cfg.name1},
+      {x: [], y: [], name: cfg.name2}
+    ])
+  );
+
+  ['m1_plot', 'm2_plot', 'm3_plot', 'm4_plot'].forEach(id =>
+    Plotly.newPlot(id, [{x: [], y: [], name: id.toUpperCase()}])
+  );
 
   Plotly.newPlot('path', [{
     x: [], y: [], mode: 'lines+markers', name: 'Drone Path'
-  }], {
-    margin: {t:0}, xaxis: {title: 'Time'}, yaxis: {title: 'Thrust'}
-  });
+  }]);
 
   function loop() {
     if (!running) return;
+
     const r = +document.getElementById("roll").value;
     const p = +document.getElementById("pitch").value;
     const y = +document.getElementById("yaw").value;
@@ -44,25 +50,24 @@ async function startSim() {
     pyodide.globals.set("T", T);
 
     pyodide.runPython("rpy_pid, motors = fc_step(r, p, y, T)");
-    const rpyt_pid = pyodide.globals.get("rpy_pid").toJs();
-    const motors = pyodide.globals.get("motors").toJs();
+    const pid = pyodide.globals.get("rpy_pid").toJs();
+    const m = pyodide.globals.get("motors").toJs();
+    const cmd = [r, p, y, T];
 
-    const rpyt_cmd = [r, p, y, T];
-
-    // Extend RPY plot: 4 command + 4 PID values
+    // Extend RPYT plots
     for (let i = 0; i < 4; i++) {
-      Plotly.extendTraces('rpy_plot', {x: [[t]], y: [[rpyt_cmd[i]]]}, [i]);
-      Plotly.extendTraces('rpy_plot', {x: [[t]], y: [[rpyt_pid[i]]]}, [i + 4]);
+      Plotly.extendTraces(plotConfigs[i].id, {x: [[t]], y: [[cmd[i]]]}, [0]);
+      Plotly.extendTraces(plotConfigs[i].id, {x: [[t]], y: [[pid[i]]]}, [1]);
     }
 
-    // Extend Motor plot
+    // Extend motor plots
     for (let i = 0; i < 4; i++) {
-      Plotly.extendTraces('motor_plot', {x: [[t]], y: [[motors[i]]]}, [i]);
+      Plotly.extendTraces(`m${i+1}_plot`, {x: [[t]], y: [[m[i]]]}, [0]);
     }
 
-    // Extend Path plot (use t for X and thrust for Y)
+    // Extend path (2D)
     pathX.push(t);
-    pathY.push(rpyt_pid[3]);
+    pathY.push(pid[3]);
     Plotly.update('path', {x: [pathX], y: [pathY]});
 
     t += 0.1;
@@ -72,4 +77,9 @@ async function startSim() {
   loop();
 }
 
+function stopSim() {
+  running = false;
+}
+
 document.getElementById("startBtn").addEventListener("click", startSim);
+document.getElementById("stopBtn").addEventListener("click", stopSim);
