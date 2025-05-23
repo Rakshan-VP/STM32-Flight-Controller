@@ -4,20 +4,18 @@ prev_error = np.zeros(4)
 integral = np.zeros(4)
 
 def fc_step(r, p, y, T, gains):
-    """
-    gains: 4x3 numpy array where each row is [Kp, Ki, Kd] for roll, pitch, yaw, thrust respectively
-    """
-    gains = np.array(gains)
-    target = np.array([(r - 1500) / 500, (p - 1500) / 500, (y - 1500) / 500, (T - 1500) / 500])
-    actual = np.zeros(4)  # Simulate current state
-
     global prev_error, integral
+
+    gains = np.array(gains)  # convert input to numpy array
+
+    target = np.array([(r-1500)/500, (p-1500)/500, (y-1500)/500, (T-1500)/500])
+    actual = np.zeros(4)
+
     error = target - actual
     integral += error * 0.1
     derivative = (error - prev_error) / 0.1
     prev_error = error
 
-    # Unpack gains by columns
     Kp = gains[:, 0]
     Ki = gains[:, 1]
     Kd = gains[:, 2]
