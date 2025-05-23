@@ -4,29 +4,84 @@
   <title>Quadcopter Sim</title>
   <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .top-half {
+      display: flex;
+      height: 35%;
+    }
+
+    .controls {
+      width: 30%;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 10px;
+      box-sizing: border-box;
+    }
+
+    .controls label {
+      display: flex;
+      flex-direction: column;
+      font-size: 14px;
+    }
+
+    .map {
+      width: 70%;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    .bottom-half {
+      display: flex;
+      flex-wrap: wrap;
+      height: 65%;
+      overflow-y: auto;
+    }
+
+    .plot {
+      width: 25%;
+      height: 50%;
+      box-sizing: border-box;
+    }
+
+    button {
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
-  <div>
-    <label>Roll: <input type="range" id="roll" min="1000" max="2000" value="1500"></label>
-    <label>Pitch: <input type="range" id="pitch" min="1000" max="2000" value="1500"></label>
-    <label>Yaw: <input type="range" id="yaw" min="1000" max="2000" value="1500"></label>
-    <label>Thrust: <input type="range" id="thrust" min="1000" max="2000" value="1500"></label>
-    <button id="startBtn">Start</button>
-    <button id="stopBtn">Stop</button>
+  <div class="top-half">
+    <div class="controls">
+      <label>Roll: <input type="range" id="roll" min="1000" max="2000" value="1500"></label>
+      <label>Pitch: <input type="range" id="pitch" min="1000" max="2000" value="1500"></label>
+      <label>Yaw: <input type="range" id="yaw" min="1000" max="2000" value="1500"></label>
+      <label>Thrust: <input type="range" id="thrust" min="1000" max="2000" value="1500"></label>
+      <button id="startBtn">Start</button>
+      <button id="stopBtn">Stop</button>
+    </div>
+    <div class="map">
+      <div id="path" style="width:100%; height:100%;"></div>
+    </div>
   </div>
-  
-  <div style="display: flex; flex-wrap: wrap;">
-    <div id="roll_plot" style="width:48%;height:300px;"></div>
-    <div id="pitch_plot" style="width:48%;height:300px;"></div>
-    <div id="yaw_plot" style="width:48%;height:300px;"></div>
-    <div id="thrust_plot" style="width:48%;height:300px;"></div>
-  
-    <div id="m1_plot" style="width:48%;height:300px;"></div>
-    <div id="m2_plot" style="width:48%;height:300px;"></div>
-    <div id="m3_plot" style="width:48%;height:300px;"></div>
-    <div id="m4_plot" style="width:48%;height:300px;"></div>
 
-    <div id="path" style="width:48%;height:300px;"></div>
+  <div class="bottom-half">
+    <div id="roll_plot" class="plot"></div>
+    <div id="pitch_plot" class="plot"></div>
+    <div id="yaw_plot" class="plot"></div>
+    <div id="thrust_plot" class="plot"></div>
+    <div id="m1_plot" class="plot"></div>
+    <div id="m2_plot" class="plot"></div>
+    <div id="m3_plot" class="plot"></div>
+    <div id="m4_plot" class="plot"></div>
   </div>
 
   <script type="module" src="main.js"></script>
