@@ -1,46 +1,39 @@
-let pyodide;
+window.updateLabel = function (id, val) {
+  document.getElementById(id).innerText = val;
+};
 
-async function loadPyodideAndPackages() {
-  pyodide = await loadPyodide();
-  await pyodide.loadPackage("micropip");
-  const fcCode = await fetch("flight_controller.py").then(r => r.text());
-  pyodide.runPython(fcCode);
+window.runSimulation = async function () {
+  const roll = parseInt(document.getElementById("roll").value);
+  const pitch = parseInt(document.getElementById("pitch").value);
+  const yaw = parseInt(document.getElementById("yaw").value);
+  const thrust = parseInt(document.getElementById("thrust").value);
 
-  const dynCode = await fetch("drone_dynamics.py").then(r => r.text());
-  pyodide.runPython(dynCode);
+  const flightMode = document.getElementById("mode").value;
+  const rtl = document.getElementById("rtl").checked;
 
-}
+  const command = { roll, pitch, yaw, thrust, flightMode, rtl };
 
-loadPyodideAndPackages();
+  await pyodide.runPythonAsync(`
+import json
+cmd = json.loads('''${JSON.stringify(command)}''')
+motors = flight_controller(cmd)
+response = motor_to_rpyt(motors)
+  `);
 
-function updateLabel(id) {
-  document.getElementById(id + "Val").innerText = document.getElementById(id).value;
-}
+  const rpyt = pyodide.globals.get("response").toJs();
+  const motor = pyodide.globals.get("motors").toJs();
 
-async function runSimulation() {
-  const cmd = {
-    roll: parseInt(document.getElementById("roll").value),
-    pitch: parseInt(document.getElementById("pitch").value),
-    yaw: parseInt(document.getElementById("yaw").value),
-    thrust: parseInt(document.getElementById("thrust").value)
-  };
+  Plotly.newPlot("rpyt-plot", [
+    { y: rpyt[0], name: "Roll" },
+    { y: rpyt[1], name: "Pitch" },
+    { y: rpyt[2], name: "Yaw" },
+    { y: rpyt[3], name: "Thrust" },
+  ], { title: "RPYT Response" });
 
-  let pythonCmd = `cmd = ${JSON.stringify(cmd)}\n` +
-                  `motors = flight_controller(cmd)\n` +
-                  `response = motor_to_rpyt(motors)`;
-  await pyodide.runPythonAsync(pythonCmd);
-
-  const motors = pyodide.globals.get("motors").toJs();
-  const response = pyodide.globals.get("response").toJs();
-
-  Plotly.newPlot("rpyPlot", [
-    { y: [response.roll], name: "Roll" },
-    { y: [response.pitch], name: "Pitch" },
-    { y: [response.yaw], name: "Yaw" },
-    { y: [response.thrust], name: "Thrust" },
-  ], { title: "RPYT Response", margin: { t: 30 } });
-
-  Plotly.newPlot("motorPlot", motors.map((m, i) => ({
-    y: [m], name: `Motor ${i+1}`
-  })), { title: "Motor Outputs", margin: { t: 30 } });
-}
+  Plotly.newPlot("motor-plot", [
+    { y: motor[0], name: "M1" },
+    { y: motor[1], name: "M2" },
+    { y: motor[2], name: "M3" },
+    { y: motor[3], name: "M4" },
+  ], { title: "Motor Commands" });
+};
