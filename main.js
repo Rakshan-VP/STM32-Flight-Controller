@@ -63,10 +63,11 @@ async function startSim() {
     pyodide.globals.set("gains", gains);
 
     pyodide.runPython("rpy_pid, motors = fc_step(r, p, y, T, gains)");
-    const cmd = [r, p, y, T];
+    
     const pid = pyodide.globals.get("rpy_pid").toJs();
     const m = pyodide.globals.get("motors").toJs();
-    
+    const cmd = [r, p, y, T];
+
 
     for (let i = 0; i < 4; i++) {
       Plotly.extendTraces(plotConfigs[i].id, {x: [[t]], y: [[cmd[i]]]}, [0], 100);
