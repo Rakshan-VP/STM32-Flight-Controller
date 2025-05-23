@@ -1,62 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Virtual Transmitter</title>
-  <style>
-    body { font-family: sans-serif; margin: 2rem; }
-    .slider-container { margin-bottom: 1.5rem; }
-    .label { margin-bottom: 0.5rem; display: block; }
-    .value-display { margin-left: 1rem; }
-    .switch-container, .mode-container { margin-bottom: 1.5rem; }
-  </style>
+  <title>Quadcopter Simulator</title>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
   <h1>🕹️ Virtual Transmitter</h1>
 
-  <!-- Sliders -->
-  <div class="slider-container">
-    <label class="label">Roll (PWM): <span id="rollVal">1500</span></label>
-    <input type="range" id="roll" min="1000" max="2000" step="1" value="1500">
+  <!-- Inputs -->
+  <div>
+    Roll: <input type="range" id="roll" min="1000" max="2000" value="1500" oninput="updateLabel('roll')">
+    <span id="rollVal">1500</span><br>
+    Pitch: <input type="range" id="pitch" min="1000" max="2000" value="1500" oninput="updateLabel('pitch')">
+    <span id="pitchVal">1500</span><br>
+    Yaw: <input type="range" id="yaw" min="1000" max="2000" value="1500" oninput="updateLabel('yaw')">
+    <span id="yawVal">1500</span><br>
+    Thrust: <input type="range" id="thrust" min="1000" max="2000" value="1000" oninput="updateLabel('thrust')">
+    <span id="thrustVal">1000</span><br><br>
+    <button onclick="runSimulation()">Run</button>
   </div>
 
-  <div class="slider-container">
-    <label class="label">Pitch (PWM): <span id="pitchVal">1500</span></label>
-    <input type="range" id="pitch" min="1000" max="2000" step="1" value="1500">
-  </div>
+  <!-- Plots -->
+  <div id="rpyPlot" style="width:100%;height:300px;"></div>
+  <div id="motorPlot" style="width:100%;height:300px;"></div>
 
-  <div class="slider-container">
-    <label class="label">Yaw (PWM): <span id="yawVal">1500</span></label>
-    <input type="range" id="yaw" min="1000" max="2000" step="1" value="1500">
-  </div>
-
-  <div class="slider-container">
-    <label class="label">Thrust (PWM): <span id="thrustVal">1000</span></label>
-    <input type="range" id="thrust" min="1000" max="2000" step="1" value="1000">
-  </div>
-
-  <!-- Flight Mode -->
-  <div class="mode-container">
-    <label class="label">Flight Mode:</label>
-    <select id="flightMode">
-      <option value="manual">Manual</option>
-      <option value="stabilize">Stabilize</option>
-      <option value="althold">AltHold</option>
-      <option value="auto">Auto</option>
-    </select>
-  </div>
-
-  <!-- RTL Switch -->
-  <div class="switch-container">
-    <label>
-      <input type="checkbox" id="rtlSwitch">
-      Enable RTL (Return to Launch)
-    </label>
-  </div>
-
-  <button onclick="sendRPYT()">🚀 Send RPYT</button>
-
-  <script src="main.js"></script>
+  <script type="module" src="main.js"></script>
 </body>
 </html>
