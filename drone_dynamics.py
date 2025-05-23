@@ -1,11 +1,15 @@
+# drone_dynamics.py
+
 def motor_to_rpyt(motors):
+    # Simplified inverse mixing demo (just average)
+    m1, m2, m3, m4 = motors
+    roll = (m1 - m2 - m3 + m4) / 4
+    pitch = (m1 + m2 - m3 - m4) / 4
+    yaw = (-m1 - m2 + m3 + m4) / 4
     thrust = sum(motors) / 4
-    roll = (motors[0] + motors[3] - motors[1] - motors[2]) / 4
-    pitch = (motors[0] + motors[1] - motors[2] - motors[3]) / 4
-    yaw = (-motors[0] + motors[1] + motors[2] - motors[3]) / 4
-    return {
-        'roll': roll / 500,
-        'pitch': pitch / 500,
-        'yaw': yaw / 500,
-        'thrust': (thrust - 1000) / 1000
-    }
+    return [roll, pitch, yaw, thrust]
+
+# For 2D path simulation, you can extend this file later
+def update_path(vx, vy):
+    # Dummy placeholder for Pyodide usage
+    return [0, 0]
