@@ -1,5 +1,3 @@
-import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js";
-
 let pyodide;
 let history = {
   txRPYT: [], // transmitter commands history
