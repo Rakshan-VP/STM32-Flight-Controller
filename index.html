@@ -1,30 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
   <title>Quadcopter Simulator</title>
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
   <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; gap: 10px; height: 100vh; padding: 10px; }
+    #transmitter { grid-column: 1 / 2; grid-row: 1 / 2; }
+    #plot-rpyt { grid-column: 1 / 2; grid-row: 2 / 3; }
+    #plot-motors { grid-column: 2 / 3; grid-row: 2 / 3; }
+    #plot-path { grid-column: 2 / 3; grid-row: 1 / 2; }
+
+    label { display: block; margin: 5px 0 2px; }
+    input[type=range] { width: 100%; }
+  </style>
 </head>
 <body>
-  <h1>🕹️ Virtual Transmitter</h1>
 
-  <!-- Inputs -->
-  <div>
-    Roll: <input type="range" id="roll" min="1000" max="2000" value="1500" oninput="updateLabel('roll')">
-    <span id="rollVal">1500</span><br>
-    Pitch: <input type="range" id="pitch" min="1000" max="2000" value="1500" oninput="updateLabel('pitch')">
-    <span id="pitchVal">1500</span><br>
-    Yaw: <input type="range" id="yaw" min="1000" max="2000" value="1500" oninput="updateLabel('yaw')">
-    <span id="yawVal">1500</span><br>
-    Thrust: <input type="range" id="thrust" min="1000" max="2000" value="1000" oninput="updateLabel('thrust')">
-    <span id="thrustVal">1000</span><br><br>
-    <button onclick="runSimulation()">Run</button>
+  <!-- Virtual transmitter controls -->
+  <div id="transmitter">
+    <h3>Virtual Transmitter (RPYT)</h3>
+    <label>Roll <span id="roll-val">1500</span></label>
+    <input id="roll" type="range" min="1000" max="2000" value="1500" />
+    <label>Pitch <span id="pitch-val">1500</span></label>
+    <input id="pitch" type="range" min="1000" max="2000" value="1500" />
+    <label>Yaw <span id="yaw-val">1500</span></label>
+    <input id="yaw" type="range" min="1000" max="2000" value="1500" />
+    <label>Thrust <span id="thrust-val">1000</span></label>
+    <input id="thrust" type="range" min="1000" max="2000" value="1000" />
   </div>
 
-  <!-- Plots -->
-  <div id="rpyPlot" style="width:100%;height:300px;"></div>
-  <div id="motorPlot" style="width:100%;height:300px;"></div>
+  <!-- RPYT command plot -->
+  <div id="plot-rpyt" style="height: 45vh;"></div>
+
+  <!-- Motor commands plot -->
+  <div id="plot-motors" style="height: 45vh;"></div>
+
+  <!-- 2D path plot -->
+  <div id="plot-path" style="height: 45vh;"></div>
 
   <script type="module" src="main.js"></script>
+
 </body>
 </html>
