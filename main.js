@@ -65,6 +65,7 @@ async function startSim() {
     pyodide.runPython("rpy_pid, motors = fc_step(r, p, y, T, gains)");
 
     const pid = pyodide.globals.get("rpy_pid").toJs();
+    const rpy_pwm = pyodide.globals.get("rpy_pwm").toJs();       // absolute PWM commands
     const m = pyodide.globals.get("motors").toJs();
     const cmd = [r, p, y, T];
 
