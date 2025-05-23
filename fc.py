@@ -9,11 +9,6 @@ def fc_step(r, p, y, T, gains):
     
     target = np.array([r, p, y, T])
     
-    # Add process noise
-    noise = np.random.normal(0, 5, size=4)
-    actual = actual + noise
-    actual = np.clip(actual, [1000, 1000, 1000, 1000], [2000, 2000, 2000, 2000])
-    
     error = target - actual
     integral += error * 0.1
     derivative = (error - prev_error) / 0.1
