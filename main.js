@@ -40,8 +40,8 @@ async function startSim() {
     const ids = ["roll", "pitch", "yaw", "thrust"];
     const gains = ids.map(axis => ([
       parseFloat(document.getElementById(`${axis}_p`).value),
-      parseFloat(document.getElementById(`${axis}_d`).value),
-      parseFloat(document.getElementById(`${axis}_i`).value)
+      parseFloat(document.getElementById(`${axis}_i`).value),
+      parseFloat(document.getElementById(`${axis}_d`).value)
     ]));
     return gains;
   }
