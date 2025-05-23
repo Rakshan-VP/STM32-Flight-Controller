@@ -65,10 +65,9 @@ async function startSim() {
     pyodide.runPython("rpy_pid, motors = fc_step(r, p, y, T, gains)");
     
     const pid = pyodide.globals.get("rpy_pid").toJs();
-    console.log("PID output_pwm:", pid);
     const m = pyodide.globals.get("motors").toJs();
     const cmd = [r, p, y, T];
-    console.log("cmd (input commands):", cmd);
+    
 
 
     for (let i = 0; i < 4; i++) {
