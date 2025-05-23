@@ -9,29 +9,50 @@
     .slider-container { margin-bottom: 1.5rem; }
     .label { margin-bottom: 0.5rem; display: block; }
     .value-display { margin-left: 1rem; }
+    .switch-container, .mode-container { margin-bottom: 1.5rem; }
   </style>
 </head>
 <body>
   <h1>🕹️ Virtual Transmitter</h1>
 
+  <!-- Sliders -->
   <div class="slider-container">
-    <label class="label">Roll: <span id="rollVal" class="value-display">0</span></label>
-    <input type="range" id="roll" min="-1" max="1" step="0.01" value="0">
+    <label class="label">Roll (PWM): <span id="rollVal">1500</span></label>
+    <input type="range" id="roll" min="1000" max="2000" step="1" value="1500">
   </div>
 
   <div class="slider-container">
-    <label class="label">Pitch: <span id="pitchVal" class="value-display">0</span></label>
-    <input type="range" id="pitch" min="-1" max="1" step="0.01" value="0">
+    <label class="label">Pitch (PWM): <span id="pitchVal">1500</span></label>
+    <input type="range" id="pitch" min="1000" max="2000" step="1" value="1500">
   </div>
 
   <div class="slider-container">
-    <label class="label">Yaw: <span id="yawVal" class="value-display">0</span></label>
-    <input type="range" id="yaw" min="-1" max="1" step="0.01" value="0">
+    <label class="label">Yaw (PWM): <span id="yawVal">1500</span></label>
+    <input type="range" id="yaw" min="1000" max="2000" step="1" value="1500">
   </div>
 
   <div class="slider-container">
-    <label class="label">Thrust: <span id="thrustVal" class="value-display">0</span></label>
-    <input type="range" id="thrust" min="0" max="1" step="0.01" value="0">
+    <label class="label">Thrust (PWM): <span id="thrustVal">1000</span></label>
+    <input type="range" id="thrust" min="1000" max="2000" step="1" value="1000">
+  </div>
+
+  <!-- Flight Mode -->
+  <div class="mode-container">
+    <label class="label">Flight Mode:</label>
+    <select id="flightMode">
+      <option value="manual">Manual</option>
+      <option value="stabilize">Stabilize</option>
+      <option value="althold">AltHold</option>
+      <option value="auto">Auto</option>
+    </select>
+  </div>
+
+  <!-- RTL Switch -->
+  <div class="switch-container">
+    <label>
+      <input type="checkbox" id="rtlSwitch">
+      Enable RTL (Return to Launch)
+    </label>
   </div>
 
   <button onclick="sendRPYT()">🚀 Send RPYT</button>
