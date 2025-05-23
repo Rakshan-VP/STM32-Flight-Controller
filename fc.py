@@ -19,7 +19,7 @@ def fc_step(r, p, y, T, gains):  # gains shape (4,3) with columns: kp, ki, kd
     Kd = np.array([g[2] for g in gains])
 
     output = Kp * error + Ki * integral + Kd * derivative  # all in PWM units
-    output_pwm = 1500 + output  # center around 1500
+    output_pwm = 1500 + output*0  # center around 1500
     output_pwm = np.clip(output_pwm, 1000, 2000)
 
     roll, pitch, yaw, thrust = output_pwm
