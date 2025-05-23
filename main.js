@@ -38,43 +38,38 @@ async function startSim() {
 
   function loop() {
     if (!running) return;
-
+  
     const r = +document.getElementById("roll").value;
     const p = +document.getElementById("pitch").value;
     const y = +document.getElementById("yaw").value;
     const T = +document.getElementById("thrust").value;
-
+  
     pyodide.globals.set("r", r);
     pyodide.globals.set("p", p);
     pyodide.globals.set("y", y);
     pyodide.globals.set("T", T);
-
+  
     pyodide.runPython("rpy_pid, motors = fc_step(r, p, y, T)");
     const pid = pyodide.globals.get("rpy_pid").toJs();
     const m = pyodide.globals.get("motors").toJs();
     const cmd = [r, p, y, T];
-
-    // Extend RPYT plots
+  
     for (let i = 0; i < 4; i++) {
       Plotly.extendTraces(plotConfigs[i].id, {x: [[t]], y: [[cmd[i]]]}, [0], 100);
       Plotly.extendTraces(plotConfigs[i].id, {x: [[t]], y: [[pid[i]]]}, [1], 100);
+    }
+  
+    for (let i = 0; i < 4; i++) {
       Plotly.extendTraces(`m${i+1}_plot`, {x: [[t]], y: [[m[i]]]}, [0], 100);
     }
-
-    // // Extend motor plots
-    // for (let i = 0; i < 4; i++) {
-    //   Plotly.extendTraces(`m${i+1}_plot`, {x: [[t]], y: [[m[i]]]}, [0]);
-    // }
-
-    // Extend path (2D)
+  
     pathX.push(t);
     pathY.push(pid[3]);
     Plotly.update('path', {x: [pathX], y: [pathY]});
-
+  
     t += 0.1;
     setTimeout(loop, 100);
   }
-
   loop();
 }
 
