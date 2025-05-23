@@ -7,6 +7,7 @@ def fc_step(r, p, y, T, gains):
     """
     gains: 4x3 numpy array where each row is [Kp, Ki, Kd] for roll, pitch, yaw, thrust respectively
     """
+    gains = np.array(gains)
     target = np.array([(r - 1500) / 500, (p - 1500) / 500, (y - 1500) / 500, (T - 1500) / 500])
     actual = np.zeros(4)  # Simulate current state
 
