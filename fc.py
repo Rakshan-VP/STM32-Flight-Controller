@@ -1,35 +1,42 @@
 import numpy as np
 
+# Initialize integral and previous error terms as globals or outside function for persistence
+integral_error = np.zeros(4)
 prev_error = np.zeros(4)
-integral = np.zeros(4)
-actual = np.array([1500, 1500, 1500, 1000])  # initialize thrust at 1000 PWM
 
-def fc_step(r, p, y, T, gains):
-    global prev_error, integral, actual
-    
-    target = np.array([r, p, y, T])
-    
-    error = target - actual
-    integral += error * 0.1
-    derivative = (error - prev_error) / 0.1
-    prev_error = error
-    
+def fc_step(r, p, y, T, gains, dt=0.01):
+    global integral_error, prev_error
+
+    # Current error vector: assuming desired setpoint is zero for r, p, y, and thrust target T
+    error = np.array([r, p, y, T])
+
     Kp = np.array([g[0] for g in gains])
     Ki = np.array([g[1] for g in gains])
     Kd = np.array([g[2] for g in gains])
-    
-    output = Kp * error + Ki * integral + Kd * derivative
-    
-    output_pwm = 1500 + output
-    output_pwm = np.clip(output_pwm, 1000, 2000)
-    
-    actual = output_pwm
-    
-    roll, pitch, yaw, thrust = output_pwm
-    m1 = thrust + pitch - roll + yaw
-    m2 = thrust + pitch + roll - yaw
-    m3 = thrust - pitch + roll + yaw
-    m4 = thrust - pitch - roll - yaw
-    motors = np.clip([m1, m2, m3, m4], 1000, 2000)
-    
+
+    # Integral term update
+    integral_error += error * dt
+
+    # Derivative term
+    derivative = (error - prev_error) / dt
+
+    # PID output for each control axis
+    pid_output = Kp * error + Ki * integral_error + Kd * derivative
+
+    prev_error = error
+
+    # Mixer for quadcopter (simplified)
+    # Motor layout: M1, M2, M3, M4
+    # Mix pitch, roll, yaw corrections and add thrust
+    # For example (assuming motor PWM base is 1000 to 2000)
+    base_pwm = 1000 + T * 1000  # scale thrust 0-1 to PWM 1000-2000
+    motors = np.zeros(4)
+    motors[0] = base_pwm + pid_output[1] + pid_output[0] - pid_output[2]  # Front Right
+    motors[1] = base_pwm - pid_output[1] + pid_output[0] + pid_output[2]  # Front Left
+    motors[2] = base_pwm - pid_output[1] - pid_output[0] - pid_output[2]  # Rear Left
+    motors[3] = base_pwm + pid_output[1] - pid_output[0] + pid_output[2]  # Rear Right
+
+    # Clamp motor PWM signals between 1000 and 2000
+    output_pwm = np.clip(motors, 1000, 2000)
+
     return output_pwm, motors
