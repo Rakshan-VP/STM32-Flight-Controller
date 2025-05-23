@@ -1,17 +1,12 @@
-def pwm_to_normalized(pwm):
-    return (pwm - 1500) / 500
-
-def mix_controls(roll, pitch, yaw, thrust):
-    m1 = thrust + roll + pitch - yaw
-    m2 = thrust - roll + pitch + yaw
-    m3 = thrust - roll - pitch - yaw
-    m4 = thrust + roll - pitch + yaw
-    return [max(1000, min(2000, m)) for m in [m1, m2, m3, m4]]
+# flight_controller.py
 
 def flight_controller(cmd):
-    r = pwm_to_normalized(cmd['roll'])
-    p = pwm_to_normalized(cmd['pitch'])
-    y = pwm_to_normalized(cmd['yaw'])
-    t = (cmd['thrust'] - 1000) / 1000
-    motors = mix_controls(r, p, y, 1000 + t * 1000)
-    return motors
+    # cmd = [roll, pitch, yaw, thrust] all normalized -1 to 1 (except thrust 0-1)
+    # Just map directly for demo:
+    roll, pitch, yaw, thrust = cmd
+    # Motor mixing (simplified)
+    m1 = thrust + roll - yaw
+    m2 = thrust - roll - yaw
+    m3 = thrust - roll + yaw
+    m4 = thrust + roll + yaw
+    return [m1, m2, m3, m4]
