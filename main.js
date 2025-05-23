@@ -56,14 +56,15 @@ async function startSim() {
 
     // Extend RPYT plots
     for (let i = 0; i < 4; i++) {
-      Plotly.extendTraces(plotConfigs[i].id, {x: [[t]], y: [[cmd[i]]]}, [0]);
-      Plotly.extendTraces(plotConfigs[i].id, {x: [[t]], y: [[pid[i]]]}, [1]);
+      Plotly.extendTraces(plotConfigs[i].id, {x: [[t]], y: [[cmd[i]]]}, [0], 100);
+      Plotly.extendTraces(plotConfigs[i].id, {x: [[t]], y: [[pid[i]]]}, [1], 100);
+      Plotly.extendTraces(`m${i+1}_plot`, {x: [[t]], y: [[m[i]]]}, [0], 100);
     }
 
-    // Extend motor plots
-    for (let i = 0; i < 4; i++) {
-      Plotly.extendTraces(`m${i+1}_plot`, {x: [[t]], y: [[m[i]]]}, [0]);
-    }
+    // // Extend motor plots
+    // for (let i = 0; i < 4; i++) {
+    //   Plotly.extendTraces(`m${i+1}_plot`, {x: [[t]], y: [[m[i]]]}, [0]);
+    // }
 
     // Extend path (2D)
     pathX.push(t);
