@@ -36,40 +36,55 @@ async function startSim() {
     x: [], y: [], mode: 'lines+markers', name: 'Drone Path'
   }]);
 
+  function readGains() {
+    const ids = ["roll", "pitch", "yaw", "thrust"];
+    const gains = ids.map(axis => ([
+      parseFloat(document.getElementById(`${axis}_p`).value),
+      parseFloat(document.getElementById(`${axis}_d`).value),
+      parseFloat(document.getElementById(`${axis}_i`).value)
+    ]));
+    return gains;
+  }
+
   function loop() {
     if (!running) return;
-  
+
     const r = +document.getElementById("roll").value;
     const p = +document.getElementById("pitch").value;
     const y = +document.getElementById("yaw").value;
     const T = +document.getElementById("thrust").value;
-  
+
+    const gains = readGains();
+
     pyodide.globals.set("r", r);
     pyodide.globals.set("p", p);
     pyodide.globals.set("y", y);
     pyodide.globals.set("T", T);
-  
-    pyodide.runPython("rpy_pid, motors = fc_step(r, p, y, T)");
+    pyodide.globals.set("gains", gains);
+
+    pyodide.runPython("rpy_pid, motors = fc_step(r, p, y, T, gains)");
+
     const pid = pyodide.globals.get("rpy_pid").toJs();
     const m = pyodide.globals.get("motors").toJs();
     const cmd = [r, p, y, T];
-  
+
     for (let i = 0; i < 4; i++) {
       Plotly.extendTraces(plotConfigs[i].id, {x: [[t]], y: [[cmd[i]]]}, [0], 100);
       Plotly.extendTraces(plotConfigs[i].id, {x: [[t]], y: [[pid[i]]]}, [1], 100);
     }
-  
+
     for (let i = 0; i < 4; i++) {
       Plotly.extendTraces(`m${i+1}_plot`, {x: [[t]], y: [[m[i]]]}, [0], 100);
     }
-  
+
     pathX.push(t);
     pathY.push(pid[3]);
     Plotly.update('path', {x: [pathX], y: [pathY]});
-  
+
     t += 0.1;
     setTimeout(loop, 100);
   }
+
   loop();
 }
 
