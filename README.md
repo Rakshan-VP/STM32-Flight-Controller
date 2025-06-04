@@ -1,6 +1,12 @@
-# 🛩️ STM32 Flight Controller – GUI-Controlled Drone via PC
+# 🛩️ STM32 Flight Controller – GUI-Controlled Drone via PC (Arduino IDE, Windows)
 
-A full-featured development project to create a **graphical user interface (GUI)** for controlling a drone using an STM32-based flight controller and NRF24L01 communication module. This project uses **PlatformIO with VS Code** on Linux and targets **Arduino framework** development with DFU mode flashing.
+[![License](https://img.shields.io/github/license/Rakshan-VP/STM32-Flight-Controller)](https://github.com/Rakshan-VP/STM32-Flight-Controller/blob/main/LICENSE)
+[![Stars](https://img.shields.io/github/stars/Rakshan-VP/STM32-Flight-Controller?style=social)](https://github.com/Rakshan-VP/STM32-Flight-Controller/stargazers)
+[![Forks](https://img.shields.io/github/forks/Rakshan-VP/STM32-Flight-Controller?style=social)](https://github.com/Rakshan-VP/STM32-Flight-Controller/network/members)
+[![Issues](https://img.shields.io/github/issues/Rakshan-VP/STM32-Flight-Controller)](https://github.com/Rakshan-VP/STM32-Flight-Controller/issues)
+[![Last Commit](https://img.shields.io/github/last-commit/Rakshan-VP/STM32-Flight-Controller)](https://github.com/Rakshan-VP/STM32-Flight-Controller/commits/main)
+
+A full-featured development project to create a **graphical user interface (GUI)** for controlling a drone using an **STM32-based flight controller** and **NRF24L01 communication module**. This setup uses the **Arduino IDE on Windows** and flashes firmware using **STM32CubeProgrammer or STM32duino bootloader**.
 
 ---
 
@@ -10,104 +16,134 @@ A full-featured development project to create a **graphical user interface (GUI)
 - **Board:** STM32F401 Blackpill
 - **IMU:** MPU6050 (Gyroscope + Accelerometer)
 - **Magnetometer:** HMC5883L
-- **GPS Module:** Neo 6M GPS module
-- **Communication Module:** NRF24L01 (SPI)
+- **GPS Module:** Neo 6M GPS
+- **Communication Module:** NRF24L01 (via SPI)
 - **PWM Outputs:** 6 (for ESCs or servos)
-- **Firmware Upload Mode:** DFU (Device Firmware Upgrade)
+- **Firmware Upload Mode:** USB (DFU or USB Serial via STM32duino)
 
 ### 🖥️ Ground Station Transceiver
-- **Board:** Arduino Nano
-- **Communication Module:** NRF24L01
+- **Board:** Arduino Nano  
+- **Communication Module:** NRF24L01  
 - **Purpose:** Interface with PC over Serial for GUI ↔️ Drone communication
 
 ---
 
-## 🛠️ Development Environment
+## 🛠️ Development Environment (Windows)
 
-- **Platform:** Visual Studio Code
-- **Extension:** [PlatformIO IDE](https://platformio.org/install/ide?install=vscode)
-- **Operating System:** Linux (tested on Ubuntu/Debian)
-- **Framework:** Arduino (STM32 support via STM32duino)
-- **Upload Method:** `dfu-util` (direct USB bootloader)
+- **IDE:** [Arduino IDE](https://www.arduino.cc/en/software)
+- **Board Support:** STM32 by STMicroelectronics via STM32duino
+- **Driver Tool (for DFU mode):** [STM32CubeProgrammer](https://www.st.com/en/development-tools/stm32cubeprog.html)
+- **Optional:** [Zadig](https://zadig.akeo.ie/) to install DFU drivers
 
 ---
 
 ## 🚀 Getting Started
 
-### ✅ 1. Install Requirements
+### ✅ 1. Install Required Tools
 
-```bash
-# Install VS Code (if not installed)
-sudo snap install code --classic
+1. Download and install the **Arduino IDE** (v1.8.x or v2.x)
+2. Install **STM32CubeProgrammer**
+3. If needed, use **Zadig** to install **WinUSB driver** for DFU mode
 
-# Install dfu-util
-sudo apt update
-sudo apt install dfu-util
+
+### 🧩 2. Add STM32 Board Support to Arduino IDE
+
+1. Open **Arduino IDE**
+2. Go to **File → Preferences**
+3. In **"Additional Board Manager URLs"**, add:
 ```
-
-### 🧩 2. Set Up PlatformIO in VS Code
-1. Open Visual Studio Code
-2. Go to Extensions (Ctrl+Shift+X)
-3. Search for PlatformIO IDE
-4. Click Install
-
-> This will install PlatformIO Core and all required toolchains.
-
-### 📁 3. Create a New Project
-1. Click the PlatformIO alien icon (bottom-left sidebar)
-2. Click "New Project"
-3. Set project name: stm32_flight_controller
-4. Board: **BlackPill F401CC**
-5. Framework: **Arduino**
-6. Click Finish
-
-> Wait for PlatformIO to finish setting up the project environment.
-
-### 📄 4. Add Provided Source Files
-After the project is created:
-1. Replace all files inside the **src/ folder** with the **.cpp** files provided in this repository.
-2. Replace the default **platformio.ini** file in the project root with the following configuration:
-
-```ini
-[env:blackpill_f401cc]
-platform = ststm32
-board = blackpill_f401cc
-framework = arduino
-upload_protocol = dfu
-monitor_speed = 115200
+https://github.com/stm32duino/BoardManagerFiles/raw/main/package_stmicroelectronics_index.json
 ```
-
-### 🔧 5. Build the Project
-You can build the firmware using either method:
-
-✅ Using GUI:
-1. Click the PlatformIO alien icon
-2. Navigate to Project Tasks → Build
-
-✅ Using Terminal:
-```bash
-pio run
-```
-
-### ⬆️ 6. Upload Firmware via DFU
-🧷 Enter DFU Mode:
-1. Hold down the **BOOT0** button on your STM32 board
-2. Press and release the **RESET** button
-3. Release **BOOT0**
-
-Your device should now appear as **STM32 BOOTLOADER** in **lsusb**.
-```bash
-Bus 001 Device 003: ID 0483:df11 STMicroelectronics STM Device in DFU Mode.
-```
-🚀 Upload the Firmware:
-
-✅ GUI Method:
-1. Click **PlatformIO → Upload**
-
-✅ Terminal Method:
-```bash
-pio run --target upload
-```
-This uses **dfu-util** to flash the firmware over **USB**.
+4. Go to **Tools → Board → Boards Manager**
+5. Search for **STM32** and install **STM32 MCU based boards** by STMicroelectronics
 
 
+### 🔧 3. Configure Board Settings
+
+In **Tools** menu:
+
+- **Board:** "Generic STM32F4 series"
+- **Board part number:** "BlackPill F401CC"
+- **Upload method:** 
+- If using STM32CubeProgrammer: `STM32CubeProgrammer (DFU)`
+- If using USB Serial: `Serial`
+- **Port:** (Auto-selected if using USB Serial)
+- **USB support:** "CDC (generic 'Serial')"
+- **Optimize:** "Smallest (default)"
+- **Variant:** STM32F401CCU6
+
+
+### 📄 4. Add the Source Code
+
+1. Open the Arduino IDE
+2. Create a new sketch or open the `.ino` file provided in this repo
+3. Make sure all `.h` and `.cpp` files (if any) are in the same folder
+4. Include all necessary libraries (e.g., `Wire`, `SPI`, `RF24`, `TinyGPS++`)
+
+> If you're using `.cpp` and `.h` files: use `Sketch → Add File` to import them.
+
+---
+## ⬆️ Upload Firmware (via Arduino IDE + DFU Mode)
+
+You can upload the firmware to the STM32F401 Blackpill directly from the **Arduino IDE** using **DFU (Device Firmware Upgrade) mode**, without needing any external programmer.
+
+
+### 🔌 1. Enter DFU Mode
+
+To put the board into DFU mode:
+
+1. **Hold down the `BOOT0` button**
+2. **Press and release the `RESET` button**
+3. **Release the `BOOT0` button**
+
+Your board should now be in DFU mode.
+
+✅ To confirm:
+- Open **Device Manager** (Windows)
+- You should see:  
+  **`STM Device in DFU Mode`** under *Universal Serial Bus devices*
+
+
+### ⚙️ 2. Set Arduino IDE Settings
+
+In **Tools** menu of Arduino IDE:
+
+- **Board:** `Generic STM32F4 series`
+- **Board part number:** `BlackPill F401CC`
+- **Upload method:** `STM32CubeProgrammer (DFU)`
+- **USB support:** `CDC (generic 'Serial')`
+- **Optimize:** `Smallest (default)`
+- **Variant:** `STM32F401CCU6`
+- **Port:** *(Not needed for DFU mode)*
+
+
+### 📥 3. Install STM32CubeProgrammer
+
+If you haven’t already, install the official STM32CubeProgrammer:
+
+🔗 [Download STM32CubeProgrammer](https://www.st.com/en/development-tools/stm32cubeprog.html)
+
+Make sure it's added to your system **PATH** so Arduino IDE can call it.
+
+
+### 📤 4. Upload the Firmware
+
+1. Connect the STM32 board via USB
+2. Put it in DFU mode (as shown above)
+3. Open your `.ino` sketch in Arduino IDE
+4. Click **Upload** (Ctrl + U)
+
+The Arduino IDE will compile the sketch and upload it via **DFU using STM32CubeProgrammer**.
+
+
+### 🖥️ 5. Open Serial Monitor (Optional)
+
+After a successful upload:
+
+1. Reset the board to exit DFU mode
+2. The board will now appear as a COM port
+3. Go to **Tools → Serial Monitor**
+4. Set baud rate to **115200**
+5. View logs or communicate with the flight controller
+
+---
