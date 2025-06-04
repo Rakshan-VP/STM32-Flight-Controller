@@ -1,6 +1,6 @@
 # 🛩️ STM32 Flight Controller – GUI-Controlled Drone via PC (Arduino IDE, Windows)
 
-[![License](https://img.shields.io/github/license/Rakshan-VP/STM32-Flight-Controller)](https://github.com/Rakshan-VP/STM32-Flight-Controller/blob/main/LICENSE)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 [![Stars](https://img.shields.io/github/stars/Rakshan-VP/STM32-Flight-Controller?style=social)](https://github.com/Rakshan-VP/STM32-Flight-Controller/stargazers)
 [![Forks](https://img.shields.io/github/forks/Rakshan-VP/STM32-Flight-Controller?style=social)](https://github.com/Rakshan-VP/STM32-Flight-Controller/network/members)
 [![Issues](https://img.shields.io/github/issues/Rakshan-VP/STM32-Flight-Controller)](https://github.com/Rakshan-VP/STM32-Flight-Controller/issues)
