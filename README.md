@@ -10,6 +10,7 @@ A full-featured development project to create a **graphical user interface (GUI)
 - **Board:** STM32F401 Blackpill
 - **IMU:** MPU6050 (Gyroscope + Accelerometer)
 - **Magnetometer:** HMC5883L
+- **GPS Module:** Neo 6M GPS module
 - **Communication Module:** NRF24L01 (SPI)
 - **PWM Outputs:** 6 (for ESCs or servos)
 - **Firmware Upload Mode:** DFU (Device Firmware Upgrade)
