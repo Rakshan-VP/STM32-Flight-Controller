@@ -11,19 +11,46 @@ A full-featured development project to create a **graphical user interface (GUI)
 
 ## 📦 Hardware Overview
 
+<table>
+  <tr>
+    <td>
+
 ### ✈️ Drone Flight Controller
-- **Board:** STM32F401 Blackpill
-- **IMU:** MPU6050 (Gyroscope + Accelerometer)
-- **Magnetometer:** HMC5883L
-- **GPS Module:** Neo 6M GPS
-- **Communication Module:** NRF24L01 (via SPI)
-- **PWM Outputs:** 6 (for ESCs or servos)
-- **Firmware Upload Mode:** USB (DFU or USB Serial via STM32duino)
+
+- **Board:** STM32F401 Blackpill  
+- **IMU:** MPU6050 (Gyroscope + Accelerometer)  
+- **Magnetometer:** HMC5883L  
+- **GPS Module:** Neo 6M GPS  
+- **Communication Module:** NRF24L01 (via SPI)  
+- **PWM Outputs:** 6 (for ESCs or servos)  
+- **Firmware Upload Mode:** USB (DFU or USB Serial via STM32duino)  
+
+</td>
+    <td>
+      <img src="https://github.com/user-attachments/assets/b9ea3e52-a9c9-4f7d-bbfb-715b28fcec10" width="300"/>
+    </td>
+  </tr>
+</table>
+
+---
+
+<table>
+  <tr>
+    <td>
 
 ### 🖥️ Ground Station Transceiver
+
 - **Board:** Arduino Nano  
 - **Communication Module:** NRF24L01  
-- **Purpose:** Interface with PC over Serial for GUI ↔️ Drone communication
+- **Purpose:** Interface with PC over Serial for GUI ↔️ Drone communication  
+
+</td>
+    <td>
+      <img src="https://github.com/user-attachments/assets/b35e7a9a-7ed1-4b73-9437-922d08681606" width="250"/>
+    </td>
+  </tr>
+</table>
+
 
 ---
 
