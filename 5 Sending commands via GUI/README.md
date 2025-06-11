@@ -14,6 +14,8 @@ This repo allows you to **send Roll, Pitch, and Yaw (RPY) commands from a Python
 - An **STM32 board with nRF24L01** receives commands and prints them to its serial monitor (e.g., COM5).
 - Displays **live status feedback** (green for success, red for failure) in the GUI.
 
+![flow](https://github.com/user-attachments/assets/7cbc5e6f-f98e-42e8-b842-1e4297c10c65)
+
 ---
 
 ## 🚀 How to Use
