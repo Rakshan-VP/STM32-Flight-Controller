@@ -1,0 +1,11 @@
+// Flight Controller High-Level Architecture
+digraph {
+	rankdir=LR
+	G [label=Guidance fillcolor=lightblue shape=box style=filled]
+	C [label=Control fillcolor=lightgreen shape=box style=filled]
+	O [label=Output fillcolor=orange shape=box style=filled]
+	N [label=Navigation fillcolor=lightyellow shape=box style=filled]
+	G -> C [label=add]
+	C -> O
+	C -> N [label=add]
+}

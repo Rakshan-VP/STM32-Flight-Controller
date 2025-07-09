@@ -1,0 +1,33 @@
+digraph "Swarm Drone Flight Controller - High-Level Flow" {
+	graph [fontcolor="#2D3436" fontname="Sans-Serif" fontsize=15 label="Swarm Drone Flight Controller - High-Level Flow" nodesep=0.60 pad=2.0 rankdir=LR ranksep=0.75 splines=ortho]
+	node [fixedsize=true fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 height=1.4 imagescale=true labelloc=b shape=box style=rounded width=1.4]
+	edge [color="#7B8894"]
+	"658678f6d969442a9a1121de062ecd2f" [label="Flight Controller" height=1.9 image="C:\Users\Rakshan\AppData\Local\Programs\Python\Python310\lib\site-packages\resources/generic/compute\rack.png" shape=none]
+	a104dbd2326c48dea8ffa66323a12aa1 [label="Higher-Level Architecture" height=1.9 image="C:\Users\Rakshan\AppData\Local\Programs\Python\Python310\lib\site-packages\resources/generic/compute\rack.png" shape=none]
+	subgraph cluster_Guidance {
+		graph [bgcolor="#E5F5FD" fontname="Sans-Serif" fontsize=12 label=Guidance labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		b56e1276b9cc48b592a1c39ceab78a46 [label="Path Planner" height=1.9 image="C:\Users\Rakshan\AppData\Local\Programs\Python\Python310\lib\site-packages\resources/generic/blank\blank.png" shape=none]
+		d46d5b147d424a708576ae629bc33934 [label="Formation Logic" height=1.9 image="C:\Users\Rakshan\AppData\Local\Programs\Python\Python310\lib\site-packages\resources/generic/blank\blank.png" shape=none]
+	}
+	subgraph cluster_Control {
+		graph [bgcolor="#E5F5FD" fontname="Sans-Serif" fontsize=12 label=Control labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		"2bad5d7be309464b9cf29c5347a28088" [label="PID / Attitude Control" height=1.9 image="C:\Users\Rakshan\AppData\Local\Programs\Python\Python310\lib\site-packages\resources/generic/blank\blank.png" shape=none]
+		dcfba977daab41edbcbf4ff5cd8f0827 [label="Motor Mixer" height=1.9 image="C:\Users\Rakshan\AppData\Local\Programs\Python\Python310\lib\site-packages\resources/generic/blank\blank.png" shape=none]
+	}
+	subgraph cluster_Navigation {
+		graph [bgcolor="#E5F5FD" fontname="Sans-Serif" fontsize=12 label=Navigation labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		de09ff15d0334291a912e9c155b700be [label="IMU + GPS Fusion" height=1.9 image="C:\Users\Rakshan\AppData\Local\Programs\Python\Python310\lib\site-packages\resources/generic/blank\blank.png" shape=none]
+		"694cf4b7cb9a4d869585398cf3bd4a02" [label="EKF / SLAM" height=1.9 image="C:\Users\Rakshan\AppData\Local\Programs\Python\Python310\lib\site-packages\resources/generic/blank\blank.png" shape=none]
+	}
+	fca3b558ba6b42fe88fc98d4b6827b76 [label="PWM / Motor Output" height=1.9 image="C:\Users\Rakshan\AppData\Local\Programs\Python\Python310\lib\site-packages\resources/generic/compute\rack.png" shape=none]
+	"658678f6d969442a9a1121de062ecd2f" -> a104dbd2326c48dea8ffa66323a12aa1 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	a104dbd2326c48dea8ffa66323a12aa1 -> b56e1276b9cc48b592a1c39ceab78a46 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	a104dbd2326c48dea8ffa66323a12aa1 -> d46d5b147d424a708576ae629bc33934 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	b56e1276b9cc48b592a1c39ceab78a46 -> "2bad5d7be309464b9cf29c5347a28088" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	d46d5b147d424a708576ae629bc33934 -> "2bad5d7be309464b9cf29c5347a28088" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"2bad5d7be309464b9cf29c5347a28088" -> fca3b558ba6b42fe88fc98d4b6827b76 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"2bad5d7be309464b9cf29c5347a28088" -> de09ff15d0334291a912e9c155b700be [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"2bad5d7be309464b9cf29c5347a28088" -> "694cf4b7cb9a4d869585398cf3bd4a02" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	de09ff15d0334291a912e9c155b700be -> "2bad5d7be309464b9cf29c5347a28088" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"694cf4b7cb9a4d869585398cf3bd4a02" -> "2bad5d7be309464b9cf29c5347a28088" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+}
