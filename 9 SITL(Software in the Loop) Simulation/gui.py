@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QProgressBar, QGroupBox, QGridLayout
 )
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal, QTimer
 import urllib.parse
 import threading
 from dark_theme import dark_stylesheet
@@ -30,12 +30,15 @@ class PWMHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b"OK")
 
+            if gui_instance:
+                gui_instance.signal_keepalive.emit()
+
         elif path == "/send_pwm":
             updated = {}
             for ch in pwm_values:
                 if ch in query:
                     try:
-                        val = int(query[ch][0])
+                        val = int(float(query[ch][0]))  # float to int to handle decimal PWM
                         pwm_values[ch] = val
                         updated[ch] = val
                     except ValueError:
@@ -43,6 +46,7 @@ class PWMHandler(BaseHTTPRequestHandler):
 
             if gui_instance:
                 gui_instance.signal_update.emit(updated)
+                gui_instance.signal_keepalive.emit()
 
             self.send_response(200)
             self.send_header('Content-type', 'text/plain')
@@ -102,6 +106,7 @@ class LabeledProgressBar(QWidget):
 
 class QuadcopterGUI(QWidget):
     signal_update = pyqtSignal(dict)
+    signal_keepalive = pyqtSignal()  # NEW SIGNAL
 
     def __init__(self):
         super().__init__()
@@ -113,11 +118,23 @@ class QuadcopterGUI(QWidget):
         self.setStyleSheet(dark_stylesheet)
 
         self.bars = {}
-        self.init_ui()
+        self.connection_status = QLabel("Status: Not Connected")
+        self.connection_status.setStyleSheet("color: red; font-weight: bold;")
+
+        self.connection_timer = QTimer()
+        self.connection_timer.setInterval(1000)  
+        self.connection_timer.setSingleShot(True)
+        self.connection_timer.timeout.connect(self.mark_disconnected)
+
         self.signal_update.connect(self.update_gui)
+        self.signal_keepalive.connect(self.mark_connected)  # Connect the signal
+
+        self.init_ui()
 
     def init_ui(self):
         main_layout = QVBoxLayout()
+
+        main_layout.addWidget(self.connection_status, alignment=Qt.AlignLeft)
 
         group = QGroupBox("Transmitter Values")
         grid = QGridLayout()
@@ -139,6 +156,15 @@ class QuadcopterGUI(QWidget):
         main_layout.addWidget(group)
 
         self.setLayout(main_layout)
+
+    def mark_connected(self):
+        self.connection_status.setText("Status: Connected to Transmitter")
+        self.connection_status.setStyleSheet("color: green; font-weight: bold;")
+        self.connection_timer.start()
+
+    def mark_disconnected(self):
+        self.connection_status.setText("Status: Not Connected")
+        self.connection_status.setStyleSheet("color: red; font-weight: bold;")
 
     def update_gui(self, updates):
         for ch, val in updates.items():
