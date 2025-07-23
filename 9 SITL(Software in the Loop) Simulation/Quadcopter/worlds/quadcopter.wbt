@@ -5,15 +5,251 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/project
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/RectangleArena.proto"
 
 WorldInfo {
+  basicTimeStep 8
 }
 Viewpoint {
-  orientation -0.13856007387161345 0.13995505359068114 0.9804150595044543 1.5805784984045324
-  position -0.06036127027791585 -6.534055079436311 2.2586499657165637
+  orientation 0.1882551159131502 -0.18883514558563047 -0.9637952578863316 4.678580345544289
+  position 0.06496948794048889 -2.268262728897442 0.8886110587350131
+  follow "quadcopter"
 }
 TexturedBackground {
 }
 TexturedBackgroundLight {
 }
 RectangleArena {
-  floorSize 6 6
+  wallHeight 0.01
+}
+Robot {
+  children [
+    InertialUnit {
+      translation 0 0 0.03
+      children [
+        Pose {
+          rotation 0 0 1 0.785
+          children [
+            Shape {
+              appearance PBRAppearance {
+                roughness 1
+              }
+              geometry Box {
+                size 0.025 0.025 0.005
+              }
+            }
+          ]
+        }
+      ]
+      noise 0.0175
+    }
+    GPS {
+      translation 0.03 0.03 0.025
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0.3 0.7 0.5
+            roughness 1
+            metalness 0
+          }
+          geometry Sphere {
+            radius 0.013
+          }
+        }
+      ]
+      accuracy 0.8
+      noiseCorrelation 0.9
+      speedNoise 0.2
+    }
+    DEF m1 Propeller {
+      shaftAxis 0 0 1
+      centerOfThrust -0.0925 0.0925 0.025
+      thrustConstants 0.0004 0
+      torqueConstants 1.8e-05 0
+      fastHelixThreshold 150
+      device RotationalMotor {
+        name "m1"
+        maxVelocity 100
+        maxTorque 30
+      }
+      slowHelix Solid {
+        translation -0.0925 0.0925 0.025
+        children [
+          Transform {
+            scale 0.01 0.01 0.01
+            children [
+              Shape {
+                appearance PBRAppearance {
+                  baseColor 0.8 0.7 0.5
+                }
+                geometry Mesh {
+                  url [
+                    "../meshes/Prop_ccw.obj"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+        boundingObject Cylinder {
+          height 0.01
+          radius 0.06
+        }
+        physics Physics {
+          density -1
+          mass 0.03
+        }
+      }
+    }
+    DEF m2 Propeller {
+      shaftAxis 0 0 -1
+      centerOfThrust 0.0925 0.0925 0.025
+      thrustConstants -0.0004 0
+      torqueConstants 1.8e-05 0
+      fastHelixThreshold 150
+      device RotationalMotor {
+        name "m2"
+        maxVelocity 100
+        maxTorque 30
+      }
+      slowHelix Solid {
+        translation 0.0925 0.0925 0.025
+        children [
+          Transform {
+            scale 0.01 0.01 0.01
+            children [
+              Shape {
+                appearance PBRAppearance {
+                  baseColor 0.8 0.7 0.5
+                }
+                geometry Mesh {
+                  url [
+                    "../meshes/Prop_cw.obj"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+        boundingObject Cylinder {
+          height 0.01
+          radius 0.06
+        }
+        physics Physics {
+          density -1
+          mass 0.03
+        }
+      }
+    }
+    DEF m4 Propeller {
+      shaftAxis 0 0 -1
+      centerOfThrust -0.0925 -0.0925 0.025
+      thrustConstants -0.0004 0
+      torqueConstants 1.8e-05 0
+      fastHelixThreshold 150
+      device RotationalMotor {
+        name "m4"
+        maxVelocity 100
+        maxTorque 30
+      }
+      slowHelix Solid {
+        translation -0.0925 -0.0925 0.025
+        children [
+          Transform {
+            scale 0.01 0.01 0.01
+            children [
+              Shape {
+                appearance PBRAppearance {
+                  baseColor 0.8 0.7 0.5
+                }
+                geometry Mesh {
+                  url [
+                    "../meshes/Prop_cw.obj"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+        boundingObject Cylinder {
+          height 0.01
+          radius 0.06
+        }
+        physics Physics {
+          density -1
+          mass 0.03
+        }
+      }
+    }
+    DEF m3 Propeller {
+      shaftAxis 0 0 1
+      centerOfThrust 0.0925 -0.0925 0.025
+      thrustConstants 0.0004 0
+      torqueConstants 1.8e-05 0
+      fastHelixThreshold 150
+      device RotationalMotor {
+        name "m3"
+        maxVelocity 100
+        maxTorque 30
+      }
+      slowHelix Solid {
+        translation 0.0925 -0.0925 0.025
+        children [
+          Transform {
+            scale 0.01 0.01 0.01
+            children [
+              Shape {
+                appearance PBRAppearance {
+                  baseColor 0.8 0.7 0.5
+                }
+                geometry Mesh {
+                  url [
+                    "../meshes/Prop_ccw.obj"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+        boundingObject Cylinder {
+          height 0.01
+          radius 0.06
+        }
+        physics Physics {
+          density -1
+          mass 0.03
+        }
+      }
+    }
+    DEF Body Transform {
+      translation 0 0 0.02
+      rotation 0 0 1 0.785
+      scale 0.01 0.01 0.01
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0.5 0.7 0.3
+            roughness 1
+          }
+          geometry Mesh {
+            url [
+              "../meshes/body simple v1.obj"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+  name "quadcopter"
+  boundingObject Pose {
+    translation 0 0 0.02
+    children [
+      Cylinder {
+        height 0.04
+        radius 0.14
+      }
+    ]
+  }
+  physics Physics {
+    density -1
+    mass 0.45
+  }
+  controller "control"
 }
