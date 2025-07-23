@@ -1,14 +1,17 @@
 import sys
+import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QProgressBar, QGroupBox, QGridLayout, QComboBox
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer
-import urllib.parse
-import threading
 from dark_theme import dark_stylesheet
 
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
+# Shared PWM values
 pwm_values = {
     'ch1': 1000, 'ch2': 1500, 'ch3': 1500,
     'ch4': 1500, 'ch5': 1000, 'ch6': 1000
@@ -16,12 +19,15 @@ pwm_values = {
 
 gui_instance = None
 
+
 class PWMHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         global gui_instance
-        parsed_url = urllib.parse.urlparse(self.path)
-        path = parsed_url.path
-        query = urllib.parse.parse_qs(parsed_url.query)
+        parsed_url = self.path
+        from urllib.parse import urlparse, parse_qs
+        parsed = urlparse(parsed_url)
+        path = parsed.path
+        query = parse_qs(parsed.query)
 
         if path == "/connect":
             self.send_response(200)
@@ -52,10 +58,12 @@ class PWMHandler(BaseHTTPRequestHandler):
         else:
             self.send_error(404, "Not Found")
 
+
 def run_http_server():
     server = HTTPServer(('0.0.0.0', 5000), PWMHandler)
     print("🚀 PWM HTTP Server running on port 5000...")
     server.serve_forever()
+
 
 class LabeledProgressBar(QWidget):
     def __init__(self, name, ch, orientation=Qt.Vertical):
@@ -93,6 +101,34 @@ class LabeledProgressBar(QWidget):
         self.progress.setValue(value)
         self.value_label.setText(str(value))
 
+
+class MapCanvas(FigureCanvas):
+    def __init__(self):
+        self.fig = Figure(facecolor='#121212')
+        self.ax = self.fig.add_subplot(111)
+        super().__init__(self.fig)
+        self.setStyleSheet("background-color: #121212;")
+        self.path = []
+        self.drone_dot, = self.ax.plot([], [], 'ro', markersize=8)
+        self.path_line, = self.ax.plot([], [], color='purple', linewidth=2)
+        self.ax.set_title("XY Map", color='white')
+        self.ax.set_xlabel("X", color='white')
+        self.ax.set_ylabel("Y", color='white')
+        self.ax.tick_params(axis='x', colors='white')
+        self.ax.tick_params(axis='y', colors='white')
+        self.ax.grid(True, color='gray', linestyle='--', linewidth=0.5)
+        self.ax.set_aspect('equal')
+
+    def update_position(self, pos):
+        self.path.append(pos)
+        x_vals, y_vals = zip(*self.path)
+        self.drone_dot.set_data([x_vals[-1]], [y_vals[-1]])
+        self.path_line.set_data(x_vals, y_vals)
+        self.ax.relim()
+        self.ax.autoscale_view()
+        self.draw()
+
+
 class QuadcopterGUI(QWidget):
     signal_update = pyqtSignal(dict)
     signal_keepalive = pyqtSignal()
@@ -103,7 +139,7 @@ class QuadcopterGUI(QWidget):
         gui_instance = self
 
         self.setWindowTitle("Quadcopter GUI")
-        self.setGeometry(200, 200, 600, 750)
+        self.setGeometry(200, 200, 1250, 750)
         self.setStyleSheet(dark_stylesheet)
 
         self.bars = {}
@@ -122,10 +158,12 @@ class QuadcopterGUI(QWidget):
 
     def init_ui(self):
         main_layout = QVBoxLayout()
-
         main_layout.addWidget(self.connection_status, alignment=Qt.AlignLeft)
 
-        # Transmitter Bars
+        # Transmitter + Map side-by-side
+        transmitter_map_layout = QHBoxLayout()
+
+        # Transmitter Group
         group = QGroupBox("Transmitter Values")
         grid = QGridLayout()
 
@@ -142,20 +180,26 @@ class QuadcopterGUI(QWidget):
         add_bar("CH6", "ch6", 4, 0, Qt.Horizontal, 3)
 
         group.setLayout(grid)
-        main_layout.addWidget(group)
+        transmitter_map_layout.addWidget(group)
 
-        # ------------------- Flight Mode -------------------
+        # Map
+        self.map_canvas = MapCanvas()
+        transmitter_map_layout.addWidget(self.map_canvas)
+        self.map_canvas.setFixedHeight(group.sizeHint().height())
+
+        main_layout.addLayout(transmitter_map_layout)
+
+        # Flight Mode
         mode_group = QGroupBox("Flight Mode Selector")
         mode_layout = QGridLayout()
 
         self.ch5_ranges = [(900, 1500), (1500, 2100)]
         self.ch6_ranges = [(900, 1300), (1300, 1700), (1700, 2100)]
-        mode_options = ["Stabilize", "Alt Hold", "PosHold", "Land", "RTL","No Mode"]
+        mode_options = ["Stabilize", "Alt Hold", "PosHold", "Land", "RTL", "No Mode"]
         self.mode_selectors = {'ch5': [], 'ch6': []}
 
-        # Add CH5 on the left column
         for i, (low, high) in enumerate(self.ch5_ranges):
-            label = QLabel(f"CH5 {low}-{high} PWM:")
+            label = QLabel(f"CH5 ({low}-{high})")
             combo = QComboBox()
             combo.addItems(mode_options)
             combo.currentTextChanged.connect(lambda _, ch='ch5': self.update_active_mode(ch))
@@ -163,9 +207,8 @@ class QuadcopterGUI(QWidget):
             mode_layout.addWidget(label, i, 0)
             mode_layout.addWidget(combo, i, 1)
 
-        # Add CH6 on the right column
         for i, (low, high) in enumerate(self.ch6_ranges):
-            label = QLabel(f"CH6 {low}-{high} PWM:")
+            label = QLabel(f"CH6 ({low}-{high})")
             combo = QComboBox()
             combo.addItems(mode_options)
             combo.currentTextChanged.connect(lambda _, ch='ch6': self.update_active_mode(ch))
@@ -176,10 +219,9 @@ class QuadcopterGUI(QWidget):
         mode_group.setLayout(mode_layout)
         main_layout.addWidget(mode_group)
 
-        # ------------------- Failsafe -------------------
+        # Failsafe Section
         failsafe_group = QGroupBox("Failsafe Configuration")
         failsafe_layout = QGridLayout()
-
         failsafe_options = ["No Mode", "Land", "RTL"]
         self.failsafe_dropdowns = {}
 
@@ -225,6 +267,10 @@ class QuadcopterGUI(QWidget):
         self.update_active_mode("ch5")
         self.update_active_mode("ch6")
 
+    def update_map(self, pos):
+        self.map_canvas.update_position(pos)
+
+
 if __name__ == "__main__":
     server_thread = threading.Thread(target=run_http_server, daemon=True)
     server_thread.start()
@@ -232,4 +278,14 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     gui = QuadcopterGUI()
     gui.show()
+
+    # Example simulation of Webots input
+    def simulate_position():
+        import time
+        for i in range(100):
+            gui.update_map((i, i * 0.5))
+            time.sleep(0.1)
+
+    threading.Thread(target=simulate_position, daemon=True).start()
+
     sys.exit(app.exec_())
