@@ -3,7 +3,7 @@ import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QProgressBar, QGroupBox, QGridLayout, QComboBox
+    QProgressBar, QGroupBox, QGridLayout, QComboBox, QLineEdit
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer
 from dark_theme import dark_stylesheet
@@ -106,7 +106,7 @@ class MapCanvas(FigureCanvas):
         self.path = []
         self.drone_dot, = self.ax.plot([], [], 'ro', markersize=8)
         self.path_line, = self.ax.plot([], [], color='purple', linewidth=2)
-        self.ax.set_title("XY Map", color='white')
+        self.ax.set_title("Map View", color='white')
         self.ax.set_xlabel("X", color='white')
         self.ax.set_ylabel("Y", color='white')
         self.ax.tick_params(axis='x', colors='white')
@@ -132,7 +132,7 @@ class QuadcopterGUI(QWidget):
         global gui_instance
         gui_instance = self
 
-        self.setWindowTitle("Quadcopter GUI")
+        self.setWindowTitle("Quadcopter GCS")
         self.setGeometry(200, 200, 1000, 750)
         self.setStyleSheet(dark_stylesheet)
 
@@ -151,12 +151,55 @@ class QuadcopterGUI(QWidget):
         self.init_ui()
 
     def init_ui(self):
+        from PyQt5.QtWidgets import QPushButton, QCheckBox
+
         main_layout = QVBoxLayout()
-        main_layout.addWidget(self.connection_status, alignment=Qt.AlignLeft)
 
-        # Transmitter + Map side-by-side
+        # Status + Simulation Button
+        status_layout = QHBoxLayout()
+        status_layout.addWidget(self.connection_status, alignment=Qt.AlignLeft)
+
+        self.sim_button = QPushButton("Start Simulation")
+        self.sim_button.setFixedWidth(200)
+        self.sim_button.setStyleSheet("""
+            QPushButton {
+                color: lightgreen;
+                background-color: #444444;
+                font-weight: bold;
+                border: 1px solid #888;
+                padding: 5px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #555555;
+            }
+        """)
+        self.sim_button.clicked.connect(lambda: print("Simulation Started"))
+
+        self.reset_button = QPushButton("RESET")
+        self.reset_button.setFixedWidth(150)
+        self.reset_button.setStyleSheet("""
+            QPushButton {
+                color: orange;
+                background-color: #444444;
+                font-weight: bold;
+                border: 1px solid #888;
+                padding: 5px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #555555;
+            }
+        """)
+
+        btn_layout = QHBoxLayout()
+        btn_layout.addWidget(self.sim_button)
+        btn_layout.addWidget(self.reset_button)
+        status_layout.addLayout(btn_layout)
+        main_layout.addLayout(status_layout)
+
+        # Transmitter + Map
         transmitter_map_layout = QHBoxLayout()
-
         group = QGroupBox("Transmitter Values")
         grid = QGridLayout()
 
@@ -174,16 +217,13 @@ class QuadcopterGUI(QWidget):
 
         group.setLayout(grid)
         transmitter_map_layout.addWidget(group, stretch=1)
-
         self.map_canvas = MapCanvas()
         transmitter_map_layout.addWidget(self.map_canvas, stretch=1)
-
         main_layout.addLayout(transmitter_map_layout)
 
-        # Flight Mode
+        # Flight Mode Selector
         mode_group = QGroupBox("Flight Mode Selector")
         mode_layout = QGridLayout()
-
         self.ch5_ranges = [(900, 1500), (1500, 2100)]
         self.ch6_ranges = [(900, 1300), (1300, 1700), (1700, 2100)]
         mode_options = ["Stabilize", "Alt Hold", "PosHold", "Land", "RTL", "No Mode"]
@@ -212,32 +252,22 @@ class QuadcopterGUI(QWidget):
         # PID Gains Tuner
         pid_group = QGroupBox("PID Gains Tuner")
         pid_layout = QGridLayout()
-
         pid_defaults = {
             'Throttle': (1.0, 0.5, 0.1),
             'Roll': (1.2, 0.6, 0.2),
             'Pitch': (1.2, 0.6, 0.2),
             'Yaw': (1.1, 0.4, 0.15),
         }
-
         self.pid_inputs = {}
-
         for row, (axis, (p, i, d)) in enumerate(pid_defaults.items()):
             axis_label = QLabel(f"{axis}:")
             p_label = QLabel("P:")
             i_label = QLabel("I:")
             d_label = QLabel("D:")
-
-            p_value = QLabel(f"{p:.2f}")
-            i_value = QLabel(f"{i:.2f}")
-            d_value = QLabel(f"{d:.2f}")
-
-            self.pid_inputs[axis] = {
-                'P': p_value,
-                'I': i_value,
-                'D': d_value
-            }
-
+            p_value = QLineEdit(f"{p:.2f}")
+            i_value = QLineEdit(f"{i:.2f}")
+            d_value = QLineEdit(f"{d:.2f}")
+            self.pid_inputs[axis] = {'P': p_value, 'I': i_value, 'D': d_value}
             pid_layout.addWidget(axis_label, row, 0)
             pid_layout.addWidget(p_label, row, 1)
             pid_layout.addWidget(p_value, row, 2)
@@ -248,11 +278,9 @@ class QuadcopterGUI(QWidget):
 
         pid_group.setLayout(pid_layout)
 
-        # Arrange both mode_group and pid_group side-by-side
         bottom_layout = QHBoxLayout()
         bottom_layout.addWidget(mode_group, 2)
         bottom_layout.addWidget(pid_group, 3)
-
         main_layout.addLayout(bottom_layout)
 
         # Failsafe Section
@@ -272,11 +300,134 @@ class QuadcopterGUI(QWidget):
 
         add_failsafe_row("Radio Failsafe:", 0)
         add_failsafe_row("Battery Failsafe:", 1)
-
         failsafe_group.setLayout(failsafe_layout)
-        main_layout.addWidget(failsafe_group)
 
-        self.setLayout(main_layout)
+        # Sensor Values Section
+        sensor_group = QGroupBox("Sensor Values (Webots)")
+        sensor_layout = QGridLayout()
+        self.sensor_labels = {}
+
+        orientation_labels = ["Roll (°)", "Pitch (°)", "Yaw (°)"]
+        position_labels = ["X (m)", "Y (m)", "Altitude (m)"]
+
+        for i, label_text in enumerate(orientation_labels):
+            label = QLabel(label_text)
+            value = QLabel("0.00")
+            value.setStyleSheet("color: cyan; font-weight: bold;")
+            self.sensor_labels[label_text] = value
+            sensor_layout.addWidget(label, i, 0)
+            sensor_layout.addWidget(value, i, 1)
+
+        for i, label_text in enumerate(position_labels):
+            label = QLabel(label_text)
+            value = QLabel("0.00")
+            value.setStyleSheet("color: lightgreen; font-weight: bold;")
+            self.sensor_labels[label_text] = value
+            sensor_layout.addWidget(label, i, 2)
+            sensor_layout.addWidget(value, i, 3)
+
+        sensor_group.setLayout(sensor_layout)
+
+        failsafe_and_sensor_layout = QHBoxLayout()
+        failsafe_and_sensor_layout.addWidget(failsafe_group, 1)
+        failsafe_and_sensor_layout.addWidget(sensor_group, 1)
+        main_layout.addLayout(failsafe_and_sensor_layout)
+
+        # --- Parameters Group ---
+        main_with_params_layout = QHBoxLayout()
+        main_with_params_layout.addLayout(main_layout, stretch=5)
+
+        parameters_group = QGroupBox("Parameters")
+        parameters_group.setFixedWidth(350)
+        parameters_layout = QVBoxLayout()
+
+        # Limits Subgroup
+        limits_group = QGroupBox("Limits")
+        limits_layout = QGridLayout()
+        limits_defaults = {
+            "Max Roll Angle (°)": 45.0,
+            "Max Pitch Angle (°)": 45.0,
+            "Max Yaw Rate (°/s)": 180.0,
+            "Max Climb Rate (m/s)": 5.0,
+            "Max Descend Rate (m/s)": 3.0
+        }
+        self.limits_inputs = {}
+        for i, (label_text, default_value) in enumerate(limits_defaults.items()):
+            label = QLabel(label_text)
+            input_field = QLineEdit(str(default_value))
+            self.limits_inputs[label_text] = input_field
+            limits_layout.addWidget(label, i, 0)
+            limits_layout.addWidget(input_field, i, 1)
+        limits_group.setLayout(limits_layout)
+
+        # Complementary Filter & Sensors
+        filter_group = QGroupBox("Complementary Filter & Sensors")
+        filter_layout = QGridLayout()
+        filter_defaults = {
+            "Alpha Roll": 0.98,
+            "Alpha Pitch": 0.98,
+            "Alpha Yaw": 0.95,
+            "Alpha Altitude": 0.90
+        }
+        self.filter_inputs = {}
+        for i, (label_text, default_value) in enumerate(filter_defaults.items()):
+            label = QLabel(label_text)
+            input_field = QLineEdit(str(default_value))
+            self.filter_inputs[label_text] = input_field
+            filter_layout.addWidget(label, i, 0)
+            filter_layout.addWidget(input_field, i, 1)
+        gps_label = QLabel("Enable GPS")
+        self.gps_checkbox = QCheckBox()
+        self.gps_checkbox.setChecked(True)
+        filter_layout.addWidget(gps_label, len(filter_defaults), 0)
+        filter_layout.addWidget(self.gps_checkbox, len(filter_defaults), 1)
+        filter_group.setLayout(filter_layout)
+
+        # Mission Parameters
+        mission_group = QGroupBox("Mission Parameters")
+        mission_layout = QGridLayout()
+        mission_defaults = {
+            "Waypoint Radius (m)": 0.5,
+            "RTL Altitude (m)": 10.0
+        }
+        self.mission_inputs = {}
+        for i, (label_text, default_value) in enumerate(mission_defaults.items()):
+            label = QLabel(label_text)
+            input_field = QLineEdit(str(default_value))
+            self.mission_inputs[label_text] = input_field
+            mission_layout.addWidget(label, i, 0)
+            mission_layout.addWidget(input_field, i, 1)
+        mission_group.setLayout(mission_layout)
+
+        # Power & PWM Settings
+        power_group = QGroupBox("Power & PWM Settings")
+        power_layout = QGridLayout()
+        power_defaults = {
+            "Voltage Threshold (V/cell)": 3.5,
+            "Min PWM for Motors": 1000,
+            "Max PWM for Motors": 2000
+        }
+        self.power_inputs = {}
+        for i, (label_text, default_value) in enumerate(power_defaults.items()):
+            label = QLabel(label_text)
+            input_field = QLineEdit(str(default_value))
+            self.power_inputs[label_text] = input_field
+            power_layout.addWidget(label, i, 0)
+            power_layout.addWidget(input_field, i, 1)
+        power_group.setLayout(power_layout)
+
+        # Add all to parameters layout
+        parameters_layout.addWidget(limits_group)
+        parameters_layout.addWidget(filter_group)
+        parameters_layout.addWidget(mission_group)
+        parameters_layout.addWidget(power_group)
+        parameters_layout.addStretch()
+
+        parameters_group.setLayout(parameters_layout)
+        main_with_params_layout.addWidget(parameters_group, stretch=1)
+
+        self.setLayout(main_with_params_layout)
+
 
     def update_active_mode(self, ch):
         val = pwm_values[ch]
@@ -306,6 +457,14 @@ class QuadcopterGUI(QWidget):
     def update_map(self, pos):
         self.map_canvas.update_position(pos)
 
+    def update_sensor_values(self, roll, pitch, yaw, x, y, alt):
+        self.sensor_labels["Roll (°)"].setText(f"{roll:.2f}")
+        self.sensor_labels["Pitch (°)"].setText(f"{pitch:.2f}")
+        self.sensor_labels["Yaw (°)"].setText(f"{yaw:.2f}")
+        self.sensor_labels["X (m)"].setText(f"{x:.2f}")
+        self.sensor_labels["Y (m)"].setText(f"{y:.2f}")
+        self.sensor_labels["Altitude (m)"].setText(f"{alt:.2f}")
+
 if __name__ == "__main__":
     server_thread = threading.Thread(target=run_http_server, daemon=True)
     server_thread.start()
@@ -315,9 +474,15 @@ if __name__ == "__main__":
     gui.show()
 
     def simulate_position():
-        import time
-        for i in range(100):
-            gui.update_map((i, i * 0.5))
+        import time, math
+        for i in range(1000):
+            x, y = i * 0.05, i * 0.05
+            roll = math.sin(i/20) * 30
+            pitch = math.cos(i/25) * 25
+            yaw = (i * 2) % 360
+            alt = 10 + 5 * math.sin(i / 50)
+            gui.update_map((x, y))
+            gui.update_sensor_values(roll, pitch, yaw, x, y, alt)
             time.sleep(0.1)
 
     threading.Thread(target=simulate_position, daemon=True).start()
