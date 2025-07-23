@@ -11,14 +11,12 @@ from dark_theme import dark_stylesheet
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-# Shared PWM values
 pwm_values = {
     'ch1': 1000, 'ch2': 1500, 'ch3': 1500,
     'ch4': 1500, 'ch5': 1000, 'ch6': 1000
 }
 
 gui_instance = None
-
 
 class PWMHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -58,12 +56,10 @@ class PWMHandler(BaseHTTPRequestHandler):
         else:
             self.send_error(404, "Not Found")
 
-
 def run_http_server():
     server = HTTPServer(('0.0.0.0', 5000), PWMHandler)
     print("🚀 PWM HTTP Server running on port 5000...")
     server.serve_forever()
-
 
 class LabeledProgressBar(QWidget):
     def __init__(self, name, ch, orientation=Qt.Vertical):
@@ -101,7 +97,6 @@ class LabeledProgressBar(QWidget):
         self.progress.setValue(value)
         self.value_label.setText(str(value))
 
-
 class MapCanvas(FigureCanvas):
     def __init__(self):
         self.fig = Figure(facecolor='#121212')
@@ -128,7 +123,6 @@ class MapCanvas(FigureCanvas):
         self.ax.autoscale_view()
         self.draw()
 
-
 class QuadcopterGUI(QWidget):
     signal_update = pyqtSignal(dict)
     signal_keepalive = pyqtSignal()
@@ -139,7 +133,7 @@ class QuadcopterGUI(QWidget):
         gui_instance = self
 
         self.setWindowTitle("Quadcopter GUI")
-        self.setGeometry(200, 200, 1250, 750)
+        self.setGeometry(200, 200, 1000, 750)
         self.setStyleSheet(dark_stylesheet)
 
         self.bars = {}
@@ -163,7 +157,6 @@ class QuadcopterGUI(QWidget):
         # Transmitter + Map side-by-side
         transmitter_map_layout = QHBoxLayout()
 
-        # Transmitter Group
         group = QGroupBox("Transmitter Values")
         grid = QGridLayout()
 
@@ -180,12 +173,10 @@ class QuadcopterGUI(QWidget):
         add_bar("CH6", "ch6", 4, 0, Qt.Horizontal, 3)
 
         group.setLayout(grid)
-        transmitter_map_layout.addWidget(group)
+        transmitter_map_layout.addWidget(group, stretch=1)
 
-        # Map
         self.map_canvas = MapCanvas()
-        transmitter_map_layout.addWidget(self.map_canvas)
-        self.map_canvas.setFixedHeight(group.sizeHint().height())
+        transmitter_map_layout.addWidget(self.map_canvas, stretch=1)
 
         main_layout.addLayout(transmitter_map_layout)
 
@@ -217,7 +208,52 @@ class QuadcopterGUI(QWidget):
             mode_layout.addWidget(combo, i, 3)
 
         mode_group.setLayout(mode_layout)
-        main_layout.addWidget(mode_group)
+
+        # PID Gains Tuner
+        pid_group = QGroupBox("PID Gains Tuner")
+        pid_layout = QGridLayout()
+
+        pid_defaults = {
+            'Throttle': (1.0, 0.5, 0.1),
+            'Roll': (1.2, 0.6, 0.2),
+            'Pitch': (1.2, 0.6, 0.2),
+            'Yaw': (1.1, 0.4, 0.15),
+        }
+
+        self.pid_inputs = {}
+
+        for row, (axis, (p, i, d)) in enumerate(pid_defaults.items()):
+            axis_label = QLabel(f"{axis}:")
+            p_label = QLabel("P:")
+            i_label = QLabel("I:")
+            d_label = QLabel("D:")
+
+            p_value = QLabel(f"{p:.2f}")
+            i_value = QLabel(f"{i:.2f}")
+            d_value = QLabel(f"{d:.2f}")
+
+            self.pid_inputs[axis] = {
+                'P': p_value,
+                'I': i_value,
+                'D': d_value
+            }
+
+            pid_layout.addWidget(axis_label, row, 0)
+            pid_layout.addWidget(p_label, row, 1)
+            pid_layout.addWidget(p_value, row, 2)
+            pid_layout.addWidget(i_label, row, 3)
+            pid_layout.addWidget(i_value, row, 4)
+            pid_layout.addWidget(d_label, row, 5)
+            pid_layout.addWidget(d_value, row, 6)
+
+        pid_group.setLayout(pid_layout)
+
+        # Arrange both mode_group and pid_group side-by-side
+        bottom_layout = QHBoxLayout()
+        bottom_layout.addWidget(mode_group, 2)
+        bottom_layout.addWidget(pid_group, 3)
+
+        main_layout.addLayout(bottom_layout)
 
         # Failsafe Section
         failsafe_group = QGroupBox("Failsafe Configuration")
@@ -270,7 +306,6 @@ class QuadcopterGUI(QWidget):
     def update_map(self, pos):
         self.map_canvas.update_position(pos)
 
-
 if __name__ == "__main__":
     server_thread = threading.Thread(target=run_http_server, daemon=True)
     server_thread.start()
@@ -279,7 +314,6 @@ if __name__ == "__main__":
     gui = QuadcopterGUI()
     gui.show()
 
-    # Example simulation of Webots input
     def simulate_position():
         import time
         for i in range(100):
