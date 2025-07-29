@@ -9,7 +9,7 @@ WorldInfo {
 }
 Viewpoint {
   orientation 0.1882551159131502 -0.18883514558563047 -0.9637952578863316 4.678580345544289
-  position 0.06496948794048889 -2.268262728897442 0.8886110587350131
+  position 0.06435440786090806 -2.4692215930473758 0.9702314273310135
   follow "quadcopter"
 }
 TexturedBackground {
@@ -38,7 +38,7 @@ Robot {
           ]
         }
       ]
-      noise 0.0175
+      noise 0.00175
     }
     GPS {
       translation 0.03 0.03 0.025
@@ -54,9 +54,6 @@ Robot {
           }
         }
       ]
-      accuracy 0.8
-      noiseCorrelation 0.9
-      speedNoise 0.2
     }
     DEF m1 Propeller {
       shaftAxis 0 0 1
