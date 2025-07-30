@@ -16,6 +16,7 @@ pwm_values = {
     'ch1': 1000, 'ch2': 1500, 'ch3': 1500,
     'ch4': 1500, 'ch5': 1000, 'ch6': 1000
 }
+pwm_lock = threading.Lock()
 
 gui_instance = None
 
@@ -38,14 +39,15 @@ class PWMHandler(BaseHTTPRequestHandler):
 
         elif path == "/send_pwm":
             updated = {}
-            for ch in pwm_values:
-                if ch in query:
-                    try:
-                        val = int(float(query[ch][0]))
-                        pwm_values[ch] = val
-                        updated[ch] = val
-                    except ValueError:
-                        pass
+            with pwm_lock:
+                for ch in pwm_values:
+                    if ch in query:
+                        try:
+                            val = int(float(query[ch][0]))
+                            pwm_values[ch] = val
+                            updated[ch] = val
+                        except ValueError:
+                            pass
             if gui_instance:
                 gui_instance.signal_update.emit(updated)
                 gui_instance.signal_keepalive.emit()
@@ -54,8 +56,7 @@ class PWMHandler(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
             self.wfile.write(b"OK")
-        else:
-            self.send_error(404, "Not Found")
+
 
 def run_http_server():
     server = HTTPServer(('0.0.0.0', 5000), PWMHandler)
@@ -467,6 +468,12 @@ class QuadcopterGUI(QWidget):
         self.sensor_labels["Altitude (m)"].setText(f"{alt:.2f}")
 
 class WebotsSensorBridge:
+    latest_sensor_data = {
+        'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0,
+        'x': 0.0, 'y': 0.0, 'altitude': 0.0
+    }
+    data_lock = threading.Lock()
+
     def __init__(self, gui):
         self.robot = Robot()
         self.time_step = int(self.robot.getBasicTimeStep())
@@ -495,8 +502,16 @@ class WebotsSensorBridge:
             y = position[1]
             alt = position[2]
 
+            # Update GUI
             self.gui.update_sensor_values(roll, pitch, yaw, x, y, alt)
             self.gui.update_map((x, y))
+
+            # Update shared sensor data
+            with WebotsSensorBridge.data_lock:
+                WebotsSensorBridge.latest_sensor_data = {
+                    'roll': roll, 'pitch': pitch, 'yaw': yaw,
+                    'x': x, 'y': y, 'altitude': alt
+                }
 
 class Guidance:
     def __init__(self, gui):
@@ -504,17 +519,18 @@ class Guidance:
 
     def get_inputs(self):
         inputs = {
-            'ch1': pwm_values['ch1'],  # Throttle
-            'ch2': pwm_values['ch2'],  # Yaw
-            'ch3': pwm_values['ch3'],  # Roll
-            'ch4': pwm_values['ch4'],  # Pitch
+            'ch1': pwm_values['ch1'],
+            'ch2': pwm_values['ch2'],
+            'ch3': pwm_values['ch3'],
+            'ch4': pwm_values['ch4'],
             'ch5_mode': "No Mode",
             'ch6_mode': "No Mode",
             'limits': {},
             'mission': {},
             'power': {},
             'failsafe': {},
-            'gps_enabled': self.gui.gps_checkbox.isChecked()
+            'gps_enabled': self.gui.gps_checkbox.isChecked(),
+            'sensor': {}
         }
 
         # Get CH5 mode
@@ -547,7 +563,12 @@ class Guidance:
         for label, dropdown in self.gui.failsafe_dropdowns.items():
             inputs['failsafe'][label] = dropdown.currentText()
 
+        # ✅ Get sensor values directly from Webots
+        with WebotsSensorBridge.data_lock:
+            inputs['sensor'] = WebotsSensorBridge.latest_sensor_data.copy()
+
         return inputs
+
 
 if __name__ == "__main__":
     server_thread = threading.Thread(target=run_http_server, daemon=True)
@@ -562,7 +583,7 @@ if __name__ == "__main__":
         while True:
             inputs = guidance.get_inputs()
             print(inputs)
-            time.sleep(0.5)  # print every 0.5 seconds
+            time.sleep(0.05)  # print every 0.5 seconds
 
 
     # Start Webots sensor reading in a thread
