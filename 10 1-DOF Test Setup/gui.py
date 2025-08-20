@@ -32,6 +32,11 @@ class TestSetupGUI(QWidget):
         self.start_btn = QPushButton("Start Testing")
         self.stop_btn = QPushButton("Stop Testing")
 
+        # 🔹 Button Colors
+        self.reset_btn.setStyleSheet("background-color: goldenrod; font-weight: bold;")
+        self.start_btn.setStyleSheet("background-color: green; color: white; font-weight: bold;")
+        self.stop_btn.setStyleSheet("background-color: red; color: white; font-weight: bold;")
+
         # --- Status Label ---
         self.status_label = QLabel("Status: Stopped")
         self.status_label.setAlignment(Qt.AlignCenter)
@@ -90,6 +95,10 @@ class TestSetupGUI(QWidget):
         self.motor4_btn, self.motor4_pin = QPushButton("Test Motor 4"), QComboBox()
         for cb in [self.motor1_pin, self.motor2_pin, self.motor3_pin, self.motor4_pin]:
             cb.addItems(pin_options)
+            cb.setStyleSheet("background-color: darkgreen; color: white; font-weight: bold;")
+
+        for btn in [self.motor1_btn, self.motor2_btn, self.motor3_btn, self.motor4_btn]:
+            btn.setStyleSheet("background-color: green; color: white; font-weight: bold;")
 
         for btn, cb in [(self.motor1_btn, self.motor1_pin),
                         (self.motor2_btn, self.motor2_pin),
@@ -101,14 +110,16 @@ class TestSetupGUI(QWidget):
             motor_layout.addLayout(row)
 
         self.seq_btn = QPushButton("Test All Motors (Seq)")
+        self.seq_btn.setStyleSheet("background-color: green; color: white; font-weight: bold;")
         motor_layout.addWidget(self.seq_btn)
         motor_group.setLayout(motor_layout)
 
-        self.motor1_btn.clicked.connect(lambda: self.send_motor_cmd(f"M1:{self.motor1_pin.currentText()}"))
-        self.motor2_btn.clicked.connect(lambda: self.send_motor_cmd(f"M2:{self.motor2_pin.currentText()}"))
-        self.motor3_btn.clicked.connect(lambda: self.send_motor_cmd(f"M3:{self.motor3_pin.currentText()}"))
-        self.motor4_btn.clicked.connect(lambda: self.send_motor_cmd(f"M4:{self.motor4_pin.currentText()}"))
-        self.seq_btn.clicked.connect(lambda: self.send_motor_cmd("SEQ"))
+        # Wire motor buttons to actions (non-blocking)
+        self.motor1_btn.clicked.connect(lambda: self.test_single_motor(self.motor1_pin.currentText()))
+        self.motor2_btn.clicked.connect(lambda: self.test_single_motor(self.motor2_pin.currentText()))
+        self.motor3_btn.clicked.connect(lambda: self.test_single_motor(self.motor3_pin.currentText()))
+        self.motor4_btn.clicked.connect(lambda: self.test_single_motor(self.motor4_pin.currentText()))
+        self.seq_btn.clicked.connect(self.run_sequence)
 
         # --- PID Values Group ---
         pid_group = QGroupBox("PID Values")
@@ -182,7 +193,30 @@ class TestSetupGUI(QWidget):
         self.timer = QTimer()
         self.timer.timeout.connect(self.read_serial_data)
 
+        # used to track running sequence state
+        self.seq_running = False
+        self.seq_index = 0
+        self.seq_order = [
+            lambda: self.motor1_pin.currentText(),
+            lambda: self.motor2_pin.currentText(),
+            lambda: self.motor3_pin.currentText(),
+            lambda: self.motor4_pin.currentText(),
+        ]
+
         self.load_settings()
+
+    def set_inputs_enabled(self, enabled: bool):
+        """Enable/disable all input fields while testing"""
+        widgets = [
+            self.com_port_select, self.baud_rate_select,
+            self.motor1_pin, self.motor2_pin, self.motor3_pin, self.motor4_pin,
+            self.mode_select, self.max_roll_input, self.max_pitch_input,
+            self.kp_input, self.ki_input, self.kd_input,
+            self.test_pwm_input, self.min_pwm_input, self.max_pwm_input,
+            self.slider
+        ]
+        for w in widgets:
+            w.setEnabled(enabled)
 
     def start_testing(self):
         msg = QMessageBox(self)
@@ -203,6 +237,7 @@ class TestSetupGUI(QWidget):
                 self.time_data.clear()
                 self.error_data.clear()
                 self.sample_count = 0
+                self.set_inputs_enabled(False)   # 🔹 Disable inputs
                 self.timer.start(100)
             except serial.SerialException:
                 self.status_label.setText("Error opening port")
@@ -210,12 +245,15 @@ class TestSetupGUI(QWidget):
             self.status_label.setText("Status: Cancelled")
 
     def stop_testing(self):
+        # stop any seq in progress
+        self.seq_running = False
         self.status_label.setText("Status: Stopped")
         self.timer.stop()
         if self.ser and self.ser.is_open:
             self.ser.close()
         self.roll_label.setText("Roll: --- °")
         self.pitch_label.setText("Pitch: --- °")
+        self.set_inputs_enabled(True)   # 🔹 Re-enable inputs
 
     def read_serial_data(self):
         if self.ser and self.ser.in_waiting > 0:
@@ -235,20 +273,82 @@ class TestSetupGUI(QWidget):
 
                     # Update plot
                     self.error_curve.setData(self.time_data, self.error_data)
+                    # auto-range both axes
                     self.error_plot.enableAutoRange(axis=pg.ViewBox.XYAxes, enable=True)
 
             except Exception:
                 pass
 
-    def send_motor_cmd(self, cmd):
+    def send_motor_cmd(self, cmd_str: str):
+        """Send an ASCII command over serial if open."""
         if self.ser and self.ser.is_open:
             try:
-                self.ser.write((cmd + "\n").encode())
-                self.status_label.setText(f"Sent: {cmd}")
+                self.ser.write((cmd_str + "\n").encode())
+                self.status_label.setText(f"Sent: {cmd_str}")
             except Exception:
                 self.status_label.setText("Error sending command")
         else:
             self.status_label.setText("Port not open")
+
+    def test_single_motor(self, pin_str: str):
+        """Start motor at GUI test PWM for 5 seconds then stop (non-blocking)."""
+        try:
+            pwm = int(self.test_pwm_input.text())
+        except Exception:
+            self.status_label.setText("Invalid PWM")
+            return
+
+        start_cmd = f"MOTOR START {pin_str} {pwm}"
+        stop_cmd = f"MOTOR STOP {pin_str}"
+
+        # send start
+        self.send_motor_cmd(start_cmd)
+
+        # stop after 5 seconds (5000 ms)
+        QTimer.singleShot(5000, lambda: self.send_motor_cmd(stop_cmd))
+
+    def run_sequence(self):
+        """Run motors 1..4 each for 5s with 2s gap (non-blocking)."""
+        if self.seq_running:
+            self.status_label.setText("Sequence already running")
+            return
+
+        try:
+            pwm = int(self.test_pwm_input.text())
+        except Exception:
+            self.status_label.setText("Invalid PWM")
+            return
+
+        # lock UI while sequence runs
+        self.seq_running = True
+        self.set_inputs_enabled(False)
+        self.seq_index = 0
+        self._run_seq_step(pwm)
+
+    def _run_seq_step(self, pwm):
+        if not self.seq_running or self.seq_index >= len(self.seq_order):
+            # finished
+            self.seq_running = False
+            self.set_inputs_enabled(True)
+            self.status_label.setText("Sequence finished")
+            return
+
+        pin = self.seq_order[self.seq_index]()
+        start_cmd = f"MOTOR START {pin} {pwm}"
+        stop_cmd = f"MOTOR STOP {pin}"
+
+        # start motor
+        self.send_motor_cmd(start_cmd)
+
+        # schedule stop after 5s, then schedule next step after (5s + 2s gap)
+        QTimer.singleShot(5000, lambda: self.send_motor_cmd(stop_cmd))
+        # next step after 7s from now (5000ms runtime + 2000ms gap)
+        QTimer.singleShot(7000, self._advance_seq)
+
+    def _advance_seq(self):
+        self.seq_index += 1
+        # continue sequence
+        self._run_seq_step(int(self.test_pwm_input.text()))
 
     def reset_to_default(self):
         self.mode_select.setCurrentIndex(0)
