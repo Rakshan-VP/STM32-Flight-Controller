@@ -19,19 +19,27 @@ void setup() {
 }
 
 void loop() {
-  // Run all motors at 1300 PWM
+  // Motor 1
   esc1.writeMicroseconds(1300);
-  esc2.writeMicroseconds(1300);
-  esc3.writeMicroseconds(1300);
-  esc4.writeMicroseconds(1300);
-
-  delay(5000);   // run for 5 seconds
-
-  // Stop all motors (minimum throttle)
+  delay(5000);
   esc1.writeMicroseconds(1000);
-  esc2.writeMicroseconds(1000);
-  esc3.writeMicroseconds(1000);
-  esc4.writeMicroseconds(1000);
+  delay(2000);
 
-  delay(2000);   // wait for 2 seconds
+  // Motor 2
+  esc2.writeMicroseconds(1300);
+  delay(5000);
+  esc2.writeMicroseconds(1000);
+  delay(2000);
+
+  // Motor 3
+  esc3.writeMicroseconds(1300);
+  delay(5000);
+  esc3.writeMicroseconds(1000);
+  delay(2000);
+
+  // Motor 4
+  esc4.writeMicroseconds(1300);
+  delay(5000);
+  esc4.writeMicroseconds(1000);
+  delay(2000);
 }
