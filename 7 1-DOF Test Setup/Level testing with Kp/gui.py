@@ -1,5 +1,5 @@
 # gui.py
-import sys, serial, threading, serial.tools.list_ports
+import sys, serial, threading, serial.tools.list_ports, csv, datetime, os
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QComboBox, QLabel, QHBoxLayout
 from PyQt5.QtCore import pyqtSignal, QObject
 import pyqtgraph as pg
@@ -69,9 +69,11 @@ class MainWindow(QWidget):
 
         # Roll/Pitch error plot
         self.error_plot = pg.PlotWidget(title="Roll & Pitch Error")
-        self.error_plot.addLine(y=0, pen=pg.mkPen('r'))
+        self.error_plot.addLegend()
         self.curve_roll = self.error_plot.plot(pen='b', name="Roll error")
         self.curve_pitch = self.error_plot.plot(pen='g', name="Pitch error")
+        self.stop_line_error = self.error_plot.addLine(y=0, pen=pg.mkPen('w', width=2))
+        self.stop_line_error.setVisible(False)
         self.layout.addWidget(self.error_plot)
 
         # Motor PWM plot
@@ -81,6 +83,8 @@ class MainWindow(QWidget):
         self.curve_m2 = self.motor_plot.plot(pen='g', name="M2 [Front Left]")
         self.curve_m3 = self.motor_plot.plot(pen='b', name="M3 [Rear Right]")
         self.curve_m4 = self.motor_plot.plot(pen='y', name="M4 [Rear Left]")
+        self.stop_line_motor = self.motor_plot.addLine(y=0, pen=pg.mkPen('w', width=2))
+        self.stop_line_motor.setVisible(False)
         self.layout.addWidget(self.motor_plot)
 
         # Buttons
@@ -99,6 +103,17 @@ class MainWindow(QWidget):
         self.reader = SerialReader()
         self.reader.data_received.connect(self.update_data)
 
+        # Log folder and file setup
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        log_folder = os.path.join(script_dir, "log")
+        if not os.path.exists(log_folder):
+            os.makedirs(log_folder)
+        dt_string = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_path = os.path.join(log_folder, f"drone_log_{dt_string}.csv")
+        self.log_file = open(log_path, "w", newline="")
+        self.logger = csv.writer(self.log_file)
+        self.logger.writerow(["t","roll","pitch","M1","M2","M3","M4"])
+
         # Connect buttons
         self.btn_start.clicked.connect(self.start_plotting)
         self.btn_stop.clicked.connect(self.stop_plotting)
@@ -114,11 +129,16 @@ class MainWindow(QWidget):
         baud = int(self.baud_selector.currentText())
         self.reader.start(port, baud)
         self.plotting = True
+        self.stop_line_error.setVisible(False)
+        self.stop_line_motor.setVisible(False)
 
     def stop_plotting(self):
         self.plotting = False
-
-    
+        self.stop_line_error.setVisible(True)
+        self.stop_line_motor.setVisible(True)
+        # Log stop row
+        self.t += 1
+        self.logger.writerow([self.t,"STOP","","","","","",""])
 
     def update_data(self, r, p, m1, m2, m3, m4):
         MAX_POINTS = 200
@@ -126,8 +146,6 @@ class MainWindow(QWidget):
             return
 
         self.t += 1
-
-        # append new values
         self.xdata.append(self.t)
         self.roll_err.append(r)
         self.pitch_err.append(p)
@@ -135,6 +153,9 @@ class MainWindow(QWidget):
         self.m2.append(m2)
         self.m3.append(m3)
         self.m4.append(m4)
+
+        # log data
+        self.logger.writerow([self.t,r,p,m1,m2,m3,m4])
 
         # keep only last MAX_POINTS points
         if len(self.xdata) > MAX_POINTS:
@@ -156,6 +177,7 @@ class MainWindow(QWidget):
 
     def closeEvent(self, e):
         self.reader.stop()
+        self.log_file.close()
         e.accept()
 
 if __name__ == "__main__":
