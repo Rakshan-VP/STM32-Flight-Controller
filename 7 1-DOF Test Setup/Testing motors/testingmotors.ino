@@ -4,10 +4,10 @@ Servo esc1, esc2, esc3, esc4;   // ESC objects
 
 void setup() {
   // Attach ESCs to pins
-  esc1.attach(A0);
-  esc2.attach(A1);
-  esc3.attach(PB4);
-  esc4.attach(PB5);
+  esc1.attach(A0); //rear left
+  esc2.attach(A1); //front left
+  esc3.attach(PB4); //front right
+  esc4.attach(PB5); //rear right
 
   // Initialize ESCs with minimum throttle
   esc1.writeMicroseconds(1000);
