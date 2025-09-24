@@ -154,8 +154,8 @@ def main():
     # Data tab
     data_tab, labels_dict, com_port_box, baud_rate_box, update_map, update_rpy_rates, update_motor_pwms = create_data_tab()
     tabs.addTab(data_tab, "Data")
-    tabs.addTab(def_config_tab(), "Config & Settings")
-    tabs.addTab(def_logs_tab(), "Logs & Firmware")
+    tabs.addTab(def_config_tab(), "Config and Settings")
+    tabs.addTab(def_logs_tab(), "Logs and Firmware")
     tabs.addTab(def_testing_tab(), "Testing")
 
     # Setup timer
