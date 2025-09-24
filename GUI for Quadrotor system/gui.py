@@ -1,103 +1,150 @@
-# Preamble
+# gui.py
 import sys
-from dark_theme import dark_stylesheet
+import serial.tools.list_ports
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QTabWidget, QMainWindow, QComboBox, QPushButton, QGridLayout
 )
-import serial.tools.list_ports
-from data import setup_timer
+from dark_theme import dark_stylesheet
+from data import setup_timer, create_map_widget
 
-# Start App
-app = QApplication(sys.argv)
-app.setStyleSheet(dark_stylesheet)
 
-window = QMainWindow()
-window.setWindowTitle("QuadGCS")
-window.setGeometry(100, 100, 800, 600)
+def create_data_tab():
+    """Create the Data tab layout and return tab widget, labels, and update_map function."""
+    data_tab = QWidget()
+    main_layout = QVBoxLayout()
 
-# Create main tab widget
-tabs = QTabWidget()
-window.setCentralWidget(tabs)
+    # -----------------------
+    # Top bar layout
+    # -----------------------
+    top_bar = QHBoxLayout()
+    top_bar.addStretch()
 
-# Add only one tab
-data_tab = QWidget()
-main_layout = QVBoxLayout()
+    # COM port dropdown
+    com_port_box = QComboBox()
+    ports = serial.tools.list_ports.comports()
+    for port in ports:
+        com_port_box.addItem(port.device)
+    top_bar.addWidget(com_port_box)
 
-## Top bar layout
-top_bar = QHBoxLayout()
-top_bar.addStretch()
+    # Baud rate dropdown
+    baud_rate_box = QComboBox()
+    baud_rate_box.addItems(["9600", "57600", "115200"])
+    top_bar.addWidget(baud_rate_box)
 
-### COM port dropdown
-com_port_box = QComboBox()
-ports = serial.tools.list_ports.comports()
-for port in ports:
-    com_port_box.addItem(port.device)
-top_bar.addWidget(com_port_box)
+    # Connect button
+    connect_button = QPushButton("CONNECT")
+    top_bar.addWidget(connect_button)
 
-### Baud rate dropdown
-baud_rate_box = QComboBox()
-baud_rate_box.addItems(["9600", "57600", "115200"])
-top_bar.addWidget(baud_rate_box)
+    main_layout.addLayout(top_bar)
 
-### Connect button
-connect_button = QPushButton("CONNECT")
-top_bar.addWidget(connect_button)
+    # -----------------------
+    # Middle bar layout
+    # -----------------------
+    middle_bar = QHBoxLayout()
 
-main_layout.addLayout(top_bar)
+    # Left layout for RPY and Lat/Lon/Alt
+    left_layout = QGridLayout()
 
-## Middle bar layout
-middle_bar = QHBoxLayout()
+    # RPY labels
+    roll_label = QLabel("0.0")
+    pitch_label = QLabel("0.0")
+    yaw_label = QLabel("0.0")
 
-### Left layout for RPY and Lat/Lon/Alt
-left_layout = QGridLayout()
+    left_layout.addWidget(QLabel("Roll:"), 0, 0)
+    left_layout.addWidget(roll_label, 0, 1)
+    left_layout.addWidget(QLabel("Pitch:"), 1, 0)
+    left_layout.addWidget(pitch_label, 1, 1)
+    left_layout.addWidget(QLabel("Yaw:"), 2, 0)
+    left_layout.addWidget(yaw_label, 2, 1)
 
-#### RPY labels
-left_layout.addWidget(QLabel("Roll:"), 0, 0)
-roll_label = QLabel("0.0")
-left_layout.addWidget(roll_label, 0, 1)
+    # Lat/Lon/Alt labels
+    lat_label = QLabel("0.0")
+    lon_label = QLabel("0.0")
+    alt_label = QLabel("0.0")
 
-left_layout.addWidget(QLabel("Pitch:"), 1, 0)
-pitch_label = QLabel("0.0")
-left_layout.addWidget(pitch_label, 1, 1)
+    left_layout.addWidget(QLabel("Latitude:"), 0, 2)
+    left_layout.addWidget(lat_label, 0, 3)
+    left_layout.addWidget(QLabel("Longitude:"), 1, 2)
+    left_layout.addWidget(lon_label, 1, 3)
+    left_layout.addWidget(QLabel("Altitude:"), 2, 2)
+    left_layout.addWidget(alt_label, 2, 3)
 
-left_layout.addWidget(QLabel("Yaw:"), 2, 0)
-yaw_label = QLabel("0.0")
-left_layout.addWidget(yaw_label, 2, 1)
+    middle_bar.addLayout(left_layout)
 
-#### Lat/Lon/Alt labels
-left_layout.addWidget(QLabel("Latitude:"), 0, 2)
-lat_label = QLabel("0.0")
-left_layout.addWidget(lat_label, 0, 3)
+    # -----------------------
+    # Right layout for Map + Status labels (map on top, labels in one row below)
+    # -----------------------
+    right_layout = QVBoxLayout()
 
-left_layout.addWidget(QLabel("Longitude:"), 1, 2)
-lon_label = QLabel("0.0")
-left_layout.addWidget(lon_label, 1, 3)
+    # Map widget (top)
+    map_widget, update_map = create_map_widget()
+    right_layout.addWidget(map_widget)
 
-left_layout.addWidget(QLabel("Altitude:"), 2, 2)
-alt_label = QLabel("0.0")
-left_layout.addWidget(alt_label, 2, 3)
+    # Status labels (below map in a single horizontal row)
+    status_layout = QHBoxLayout()
+    flight_mode_label = QLabel("Flight Mode: ---")
+    armed_label = QLabel("Armed: ---")
+    imu_label = QLabel("IMU: ---")
+    gps_label = QLabel("GPS: ---")
+    battery_label = QLabel("Battery: ---")
 
-middle_bar.addLayout(left_layout)
-main_layout.addLayout(middle_bar)
+    status_layout.addWidget(flight_mode_label)
+    status_layout.addWidget(armed_label)
+    status_layout.addWidget(imu_label)
+    status_layout.addWidget(gps_label)
+    status_layout.addWidget(battery_label)
+    status_layout.addStretch()  # push labels to left
 
-data_tab.setLayout(main_layout)
-tabs.addTab(data_tab, "Data")
+    right_layout.addLayout(status_layout)
 
-# -----------------------------
-# Set up live update timer
-# -----------------------------
-labels_dict = {
-    'roll': roll_label,
-    'pitch': pitch_label,
-    'yaw': yaw_label,
-    'lat': lat_label,
-    'lon': lon_label,
-    'alt': alt_label
-}
+    middle_bar.addLayout(right_layout)
 
-setup_timer(labels_dict, com_port_box, baud_rate_box, app)
+    main_layout.addLayout(middle_bar)
+    data_tab.setLayout(main_layout)
 
-# Show GUI
-window.show()
-sys.exit(app.exec_())
+    # Pack labels into dict
+    labels_dict = {
+        'roll': roll_label,
+        'pitch': pitch_label,
+        'yaw': yaw_label,
+        'lat': lat_label,
+        'lon': lon_label,
+        'alt': alt_label,
+        'flight_mode': flight_mode_label,
+        'armed': armed_label,
+        'imu': imu_label,
+        'gps': gps_label,
+        'battery': battery_label
+    }
+
+    return data_tab, labels_dict, com_port_box, baud_rate_box, update_map
+
+
+def main():
+    """Main entry point for GUI application."""
+    app = QApplication(sys.argv)
+    app.setStyleSheet(dark_stylesheet)
+
+    window = QMainWindow()
+    window.setWindowTitle("QuadGCS")
+    window.setGeometry(100, 100, 800, 600)
+
+    # Create tab widget
+    tabs = QTabWidget()
+    window.setCentralWidget(tabs)
+
+    # Add Data tab
+    data_tab, labels_dict, com_port_box, baud_rate_box, update_map = create_data_tab()
+    tabs.addTab(data_tab, "Data")
+
+    # Setup live update
+    setup_timer(labels_dict, com_port_box, baud_rate_box, update_map)
+
+    # Show GUI
+    window.show()
+    sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()
