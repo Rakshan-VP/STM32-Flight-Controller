@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QTabWidget, QMainWindow, QComboBox, QPushButton, QGridLayout
 )
+from PyQt5.QtGui import QIcon
 from dark_theme import dark_stylesheet
 from data import (
     setup_timer, create_map_widget, create_rpy_plot, create_motor_pwm_plot
@@ -143,9 +144,10 @@ def main():
     app.setStyleSheet(dark_stylesheet)
 
     window = QMainWindow()
+    window.setWindowIcon(QIcon("GUI for Quadrotor system\logo.ico"))
     window.setWindowTitle("QuadGCS")
     window.setGeometry(100, 100, 1200, 850)
-
+    
     tabs = QTabWidget()
     window.setCentralWidget(tabs)
 

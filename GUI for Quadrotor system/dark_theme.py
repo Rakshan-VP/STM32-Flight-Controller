@@ -40,8 +40,9 @@ QMessageBox {
 QTabBar::tab {
     background: #2d2d30;
     color: lightgray;
-    padding: 10px;
+    padding:15px;
     font-weight: bold;
+    min-width: 150px;
 }
 
 QTabBar::tab:selected {
